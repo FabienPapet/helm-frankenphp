@@ -23,9 +23,7 @@ spec:
       labels:
         app: {{ $workerName }}
     spec:
-      {{- with $.Values.serviceAccount }}
-      serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" . }}
-      {{- end }}
+      serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" $context }}
       restartPolicy: Always
       containers:
         - name: {{ $workerName }}
@@ -50,6 +48,14 @@ spec:
             - name: php-ini
               mountPath: /usr/local/etc/php/conf.d/99-custom.ini
               subPath: php.ini
+          {{- with $.Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- else }}
+          {{- with $.Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- end }}
       {{- with $.Values.nodeSelector }}
       nodeSelector:
@@ -68,5 +74,13 @@ spec:
         - name: php-ini
           configMap:
             name: {{ $.Release.Name }}-php-ini
+      {{- with $.Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- else }}
+      {{- with $.Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}
 {{- end }}

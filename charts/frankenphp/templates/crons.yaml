@@ -1,4 +1,5 @@
 {{- $cronName := printf "%s" .Release.Name -}}
+{{- $context := . }}
 {{- range .Values.crons }}
 ---
 apiVersion: batch/v1
@@ -17,9 +18,7 @@ spec:
       backoffLimit: {{ (default .backoffLimit 0) }}
       template:
         spec:
-          {{- with $.Values.serviceAccount }}
-          serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" . }}
-          {{- end }}
+          serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" $context }}
           restartPolicy: {{ (default .restartPolicy "Never") }}
           containers:
             - name: {{ $cronName | lower }}
@@ -37,16 +36,32 @@ spec:
               env:
                 {{- toYaml . | nindent 16 }}
               {{- end }}
-          {{- with $.Values.nodeSelector }}
-          nodeSelector:
+              {{- if $.Values.php.ini }}
+              volumeMounts:
+                - name: php-ini
+                  mountPath: /usr/local/etc/php/conf.d/99-custom.ini
+                  subPath: php.ini
+              {{- with $.Values.volumeMounts }}
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- else }}
+              {{- with $.Values.volumeMounts }}
+              volumeMounts:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- end }}
+          {{- if $.Values.php.ini }}
+          volumes:
+            - name: php-ini
+              configMap:
+                name: {{ $.Release.Name }}-php-ini
+          {{- with $.Values.volumes }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with $.Values.affinity }}
-          affinity:
+          {{- else }}
+          {{- with $.Values.volumes }}
+          volumes:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with $.Values.tolerations }}
-          tolerations:
-            {{- toYaml . | nindent 12 }}
           {{- end }}
 {{- end }}
