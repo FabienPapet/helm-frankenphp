@@ -1,0 +1,8 @@
+# 00-defaults.yaml
+# Minimal configuration using default values
+image:
+  repository: dunglas/frankenphp
+  tag: "latest"
+
+deployment:
+  replicas: 1

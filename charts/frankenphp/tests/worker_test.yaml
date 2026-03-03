@@ -1,0 +1,29 @@
+suite: Worker
+templates:
+  - worker.yaml
+tests:
+  - it: should create worker deployment
+    set:
+      consumers:
+        - name: "queue"
+          command: "php bin/console messenger:consume"
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: metadata.name
+          pattern: -worker-queue$
+  - it: should mount php.ini in worker
+    set:
+      consumers:
+        - name: "queue"
+          command: "cmd"
+      php:
+        ini: "conf"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: php-ini
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: php-ini

@@ -1,0 +1,36 @@
+suite: ConfigMap
+templates:
+  - configmap.yaml
+  - php-configmap.yaml
+tests:
+  - it: should not create configmaps by default
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should create caddyfile configmap if defined
+    template: configmap.yaml
+    set:
+      caddyfile: "frankenphp"
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - matchRegex:
+          path: metadata.name
+          pattern: -caddyfile$
+      - equal:
+          path: data.Caddyfile
+          value: "frankenphp"
+  - it: should create php-ini configmap if defined
+    template: php-configmap.yaml
+    set:
+      php:
+        ini: "memory_limit = 256M"
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - matchRegex:
+          path: metadata.name
+          pattern: -php-ini$
+      - equal:
+          path: data["php.ini"]
+          value: "memory_limit = 256M"

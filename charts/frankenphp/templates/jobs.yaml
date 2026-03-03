@@ -1,0 +1,70 @@
+{{- $jobNamePrefix := printf "%s-job" .Release.Name -}}
+{{- $context := . -}}
+{{- range $job := .Values.jobs }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $jobNamePrefix }}-{{ $job.name | replace "_" "-" }}
+  labels:
+    {{- include "helm-frankenphp.labels" $context | nindent 4 }}
+  {{- with $job.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $job.ttlSecondsAfterFinished }}
+  ttlSecondsAfterFinished: {{ $job.ttlSecondsAfterFinished }}
+  {{- end }}
+  template:
+    metadata:
+      {{- with $context.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "helm-frankenphp.selectorLabels" $context | nindent 8 }}
+    spec:
+      {{- with $context.Values.image.pullSecrets | default (list)}}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ $job.restartPolicy | default "OnFailure" }}
+      containers:
+        - name: {{ $job.name | replace "_" "-" }}
+          image: "{{ $context.Values.image.repository }}:{{ $context.Values.image.tag | default $context.Chart.AppVersion }}"
+          imagePullPolicy: {{ $context.Values.image.pullPolicy | default "Always" }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - {{ $job.command }}
+          {{- with $context.Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml ($job.resources | default $context.Values.resources) | nindent 12 }}
+          {{- if $context.Values.php.ini }}
+          volumeMounts:
+            - name: php-ini
+              mountPath: /usr/local/etc/php/conf.d/99-custom.ini
+              subPath: php.ini
+          {{- end }}
+      {{- with $context.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $context.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $context.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $context.Values.php.ini }}
+      volumes:
+        - name: php-ini
+          configMap:
+            name: {{ $context.Release.Name }}-php-ini
+      {{- end }}
+{{- end }}

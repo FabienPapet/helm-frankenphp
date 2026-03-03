@@ -1,0 +1,60 @@
+suite: Ingress
+templates:
+  - ingress.yaml
+tests:
+  - it: should not be created if disabled
+    set:
+      ingress:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should not be created by default
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should create ingress when enabled
+    set:
+      ingress:
+        enabled: true
+        className: "nginx"
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+    asserts:
+      - isKind:
+          of: Ingress
+      - isAPIVersion:
+          of: networking.k8s.io/v1
+  - it: should have correct class name
+    set:
+      ingress:
+        enabled: true
+        className: "traefik"
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: "traefik"
+  - it: should have correct hosts
+    set:
+      ingress:
+        enabled: true
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: example.com
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /

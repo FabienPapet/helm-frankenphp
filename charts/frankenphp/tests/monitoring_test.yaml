@@ -1,0 +1,26 @@
+suite: Monitoring
+templates:
+  - monitoring.yaml
+tests:
+  - it: should not create PodMonitor by default
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should create PodMonitor when enabled
+    set:
+      monitoring: true
+    asserts:
+      - isKind:
+          of: PodMonitor
+      - isAPIVersion:
+          of: monitoring.coreos.com/v1
+  - it: should have correct endpoints
+    set:
+      monitoring: true
+    asserts:
+      - equal:
+          path: spec.podMetricsEndpoints[0].port
+          value: metrics
+      - equal:
+          path: spec.podMetricsEndpoints[0].path
+          value: /metrics

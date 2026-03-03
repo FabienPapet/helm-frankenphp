@@ -1,0 +1,69 @@
+name: Helm Release
+
+permissions:
+  contents: write
+  packages: write
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'charts/**/Chart.yaml'   # adapte si ton chart est ailleurs
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get previous commit
+        run: echo "PREV_SHA=$(git rev-parse HEAD^)" >> $GITHUB_ENV
+
+      - name: Detect version change
+        id: check
+        run: |
+          if git diff $PREV_SHA HEAD -- charts/**/Chart.yaml | grep '^+version:'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract new version
+        if: steps.check.outputs.changed == 'true'
+        id: version
+        run: |
+          version=$(grep '^version:' charts/**/Chart.yaml | awk '{print $2}')
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          tag="v${{ steps.version.outputs.version }}"
+          git tag "$tag"
+          git push origin "$tag"
+
+      - name: Run release steps
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          echo "🚀 Releasing version v${{ steps.version.outputs.version }}"
+
+      - name: Login to GitHub Container Registry
+        if: steps.check.outputs.changed == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run chart-releaser
+        if: steps.check.outputs.changed == 'true'
+        uses: helm/chart-releaser-action@v1.7.0
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

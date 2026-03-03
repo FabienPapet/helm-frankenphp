@@ -1,6 +1,4 @@
-{{- $cronName := printf "%s-%s" .Release.Name "cron" -}}
-{{- $context := . }}
-
+{{- $cronName := printf "%s" .Release.Name -}}
 {{- range .Values.crons }}
 ---
 apiVersion: batch/v1
@@ -9,28 +7,46 @@ metadata:
   name: {{ $cronName }}-{{ .name }}
 spec:
   schedule: "{{ .schedule }}"
-  successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 3
-  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ (default .successfulJobsHistoryLimit 1) }}
+  failedJobsHistoryLimit: {{ (default .failedJobsHistoryLimit 3) }}
+  {{- if .concurrencyPolicy }}
+  concurrencyPolicy: {{ .concurrencyPolicy }}
+  {{- end }}
   jobTemplate:
     spec:
-      backoffLimit: 0
+      backoffLimit: {{ (default .backoffLimit 0) }}
       template:
         spec:
-          restartPolicy: Never
+          {{- with $.Values.serviceAccount }}
+          serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" . }}
+          {{- end }}
+          restartPolicy: {{ (default .restartPolicy "Never") }}
           containers:
-            - name: {{ $cronName }}
-              image: "{{ $.Values.api.docker.image }}:{{ $.Values.api.docker.tag }}"
-              imagePullPolicy: {{ $.Values.api.docker.pullPolicy }}
+            - name: {{ $cronName | lower }}
+              image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+              imagePullPolicy: {{ (default .imagePullPolicy "IfNotPresent") }}
               command:
                 - "/bin/sh"
                 - "-c"
                 - {{ .command }};
+              {{- if $.Values.resources }}
               resources:
-                requests:
-                  cpu: {{ $.Values.api.resources.requests.cpu }}
-                  memory: {{ $.Values.api.resources.requests.memory }}
-                limits:
-                  memory: {{ $.Values.api.resources.limits.memory }}
-              {{- (include "app.sharedEnv" $) | nindent 14 }}
+                {{- toYaml $.Values.resources | nindent 16 }}
+              {{- end }}
+              {{- with $.Values.env }}
+              env:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+          {{- with $.Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
 {{- end }}

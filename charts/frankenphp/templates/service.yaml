@@ -1,3 +1,4 @@
+{{- if .Values.service.create }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -5,11 +6,20 @@ metadata:
   labels:
     {{- include "helm-frankenphp.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: "ClusterIP"
   ports:
     - port: {{ .Values.service.port }}
       targetPort: http
       protocol: TCP
       name: http
+    - port: 443
+      targetPort: https
+      protocol: TCP
+      name: https
+    - port: 2019
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
   selector:
     {{- include "helm-frankenphp.selectorLabels" . | nindent 4 }}
+{{- end }}

@@ -1,0 +1,69 @@
+image:
+  repository: fabienpapet/symfony-demo-frankenphp
+  tag: "latest"
+
+deployment:
+  replicas: 3
+
+# 2. Environment Variables
+env:
+  - name: APP_ENV
+    value: prod
+  - name: APP_SECRET
+    value: "secret" # Use a secret in production
+  - name: APP_DEBUG
+    value: "0"
+  - name: SERVER_NAME
+    value: ":80"
+
+# Ingress
+ingress:
+  className: "nginx"
+  
+  enabled: true
+  hosts:
+    - host: app.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: app-tls
+      hosts:
+        - app.example.com
+
+# Custom PHP Injection
+# https://symfony.com/doc/current/performance.html
+php:
+  ini: |
+    memory_limit=512M
+    upload_max_filesize=18M
+    post_max_size=16M
+    realpath_cache_size=4096K
+    realpath_cache_ttl=600
+    opcache.memory_consumption=256
+    opcache.max_accelerated_files=32531
+    opcache.preload_user="root"
+    opcache.preload = /app/config/preload.php
+    opcache.validate_timestamps = 0
+
+jobs:
+  - name: "db-install"
+    command: "php bin/console doctrine:database:create --if-not-exists"
+    annotations:
+      "helm.sh/hook": pre-install
+      "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  - name: "db-migrations"
+    command: "php bin/console doctrine:migrations:migrate --no-interaction"
+    annotations:
+      "helm.sh/hook": post-install,post-upgrade
+      "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+
+consumers:
+  - name: "messages"
+    command: "php bin/console messenger:consume sync -vv"
+    replicas: 2
+
+crons:
+  - name: "my-cron"
+    command: "php bin/console" # run your custom command here
+    schedule: "0 4 * * *"

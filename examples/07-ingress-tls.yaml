@@ -1,0 +1,26 @@
+# 07-ingress-tls.yaml
+# Configuration with Ingress and TLS (cert-manager)
+image:
+  repository: fabienpapet/symfony-demo-frankenphp
+  tag: "latest"
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    kubernetes.io/ingress.class: "nginx"
+  
+  hosts:
+    - host: myapp.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  
+  tls:
+    - secretName: myapp-tls
+      hosts:
+        - myapp.example.com
+
+env:
+  - name: SERVER_NAME
+    value: "myapp.example.com"

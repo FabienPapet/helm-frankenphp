@@ -1,0 +1,17 @@
+# 03-custom-php.yaml
+# Configuration with custom php.ini
+image:
+  repository: fabienpapet/symfony-demo-frankenphp
+  tag: "latest"
+
+php:
+  ini: |
+    memory_limit = 512M
+    upload_max_filesize = 64M
+    post_max_size = 64M
+    max_execution_time = 60
+    opcache.enable = 1
+    opcache.memory_consumption = 256
+
+deployment:
+  replicas: 2

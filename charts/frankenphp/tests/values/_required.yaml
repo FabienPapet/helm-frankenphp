@@ -1,0 +1,4 @@
+image:
+  repository: php/frankenphp
+  tag: "latest"
+

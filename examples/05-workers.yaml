@@ -1,0 +1,22 @@
+# 05-workers.yaml
+# Configuration with async workers
+image:
+  repository: fabienpapet/symfony-demo-frankenphp
+  tag: "latest"
+
+consumers:
+  - name: "messenger"
+    command: "php bin/console messenger:consume sync --limit=1000"
+    replicas: 2
+  - name: "scheduler"
+    command: "php bin/console messenger:consume sync"
+    replicas: 1
+
+deployment:
+  replicas: 1
+
+env:
+  - name: APP_ENV
+    value: prod
+  - name: SERVER_NAME
+    value: ":80"

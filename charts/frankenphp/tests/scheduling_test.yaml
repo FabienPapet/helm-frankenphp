@@ -1,0 +1,132 @@
+suite: Scheduling Constraints
+templates:
+  - deployment.yaml
+  - worker.yaml
+  - crons.yaml
+  - jobs.yaml
+tests:
+  - it: should have nodeSelector, affinity, and tolerations in Deployment
+    template: deployment.yaml
+    set:
+      nodeSelector:
+        disktype: ssd
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/e2e-az-name
+                    operator: In
+                    values:
+                      - e2e-az-1
+      tolerations:
+        - key: "example_key"
+          operator: "Exists"
+          effect: "NoSchedule"
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector.disktype
+          value: ssd
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: kubernetes.io/e2e-az-name
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: example_key
+
+  - it: should have nodeSelector, affinity, and tolerations in Worker
+    template: worker.yaml
+    set:
+      consumers:
+        - name: test-worker
+          command: "ls"
+      nodeSelector:
+        disktype: ssd
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/e2e-az-name
+                    operator: In
+                    values:
+                      - e2e-az-1
+      tolerations:
+        - key: "example_key"
+          operator: "Exists"
+          effect: "NoSchedule"
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector.disktype
+          value: ssd
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: kubernetes.io/e2e-az-name
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: example_key
+
+  - it: should have nodeSelector, affinity, and tolerations in CronJob
+    template: crons.yaml
+    set:
+      crons:
+        - name: test-cron
+          schedule: "* * * * *"
+          command: "ls"
+      nodeSelector:
+        disktype: ssd
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/e2e-az-name
+                    operator: In
+                    values:
+                      - e2e-az-1
+      tolerations:
+        - key: "example_key"
+          operator: "Exists"
+          effect: "NoSchedule"
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.nodeSelector.disktype
+          value: ssd
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: kubernetes.io/e2e-az-name
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.tolerations[0].key
+          value: example_key
+
+  - it: should have nodeSelector, affinity, and tolerations in Job
+    template: jobs.yaml
+    set:
+      jobs:
+        - name: test-job
+          command: "ls"
+      nodeSelector:
+        disktype: ssd
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/e2e-az-name
+                    operator: In
+                    values:
+                      - e2e-az-1
+      tolerations:
+        - key: "example_key"
+          operator: "Exists"
+          effect: "NoSchedule"
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector.disktype
+          value: ssd
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: kubernetes.io/e2e-az-name
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: example_key

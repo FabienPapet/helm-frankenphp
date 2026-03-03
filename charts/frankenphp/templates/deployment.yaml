@@ -1,14 +1,14 @@
+{{- if .Values.deployment }}
+{{- $name := printf "%s" .Release.Name }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "helm-frankenphp.fullname" . }}
+  name: {{ $name }}
   labels:
     {{- include "helm-frankenphp.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
+  replicas: {{ .Values.deployment.replicas | default 1 }}
   selector:
     matchLabels:
       {{- include "helm-frankenphp.selectorLabels" . | nindent 6 }}
@@ -21,36 +21,43 @@ spec:
       labels:
         {{- include "helm-frankenphp.selectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- with .Values.image.pullSecrets | default (list)}}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.serviceAccount }}
       serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" . }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: 80
               protocol: TCP
             - name: https
-              containerPort: {{ .Values.service.port_https }}
+              containerPort: 443
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
+            - containerPort: 2019
+              protocol: TCP
+              name: metrics
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- if .Values.caddyfile }}
+            - name: caddyfile
+              mountPath: /etc/frankenphp
+          {{- end }}
+          {{- if .Values.php.ini }}
+            - name: php-ini
+              mountPath: /usr/local/etc/php/conf.d/99-custom.ini
+              subPath: php.ini
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -63,3 +70,18 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+      {{- if .Values.caddyfile }}
+        - name: caddyfile # To access this volume, this name must be used inside volumeMounts of the container
+          configMap:
+            name: {{ .Release.Name}}-caddyfile # Name of the configMap
+            items:
+              - key: Caddyfile  # Name of the item we had used inside our ConfigMap (under data:)
+                path: Caddyfile
+      {{- end }}
+      {{- if .Values.php.ini }}
+        - name: php-ini
+          configMap:
+            name: {{ .Release.Name }}-php-ini
+      {{- end }}
+{{- end }}

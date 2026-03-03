@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # STAGE 1: Unit Tests & Validation
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+      
+      - name: Lint
+        run: make lint
+
+      - name: Install unittest plugin
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest.git --version 0.8.2
+
+      - name: Unit Tests
+        run: make unit-test
+
+      - name: Install Kubeconform
+        run: |
+          VERSION=v0.6.4
+          curl -L https://github.com/yannh/kubeconform/releases/download/$VERSION/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Kubeconform Validation
+        run: make validate
+
+  # STAGE 2: Examples (Pre-requisite: Unit Tests MUST pass)
+  list-examples:
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-matrix
+        run: |
+          # List all yaml files in examples, get basename, and format as JSON array
+          EXAMPLES=$(ls examples/*.yaml | xargs -n 1 basename | jq -R -s -c 'split("\n")[:-1]')
+          echo "matrix=$EXAMPLES" >> $GITHUB_OUTPUT
+
+  install-examples:
+    needs: list-examples
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example: ${{ fromJson(needs.list-examples.outputs.matrix) }}
+    name: Test ${{ matrix.example }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+      
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.9.0
+      
+      - name: Test Example
+        continue-on-error: true
+        run: |
+          file="examples/${{ matrix.example }}"
+          echo "Testing installation with $file..."
+          
+          RELEASE_NAME="test-$(echo ${{ matrix.example }} | sed 's/\.yaml//' | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]-')"
+          NS="$RELEASE_NAME-ns"
+          
+          if helm install "$RELEASE_NAME" ./charts/frankenphp -f "$file" --create-namespace --namespace "$NS" --wait --timeout 3m; then
+             echo "✅ Installation successful for $file"
+          else
+             echo "❌ Installation failed for $file"
+             kubectl describe pods -n "$NS"
+             kubectl logs -l app.kubernetes.io/name=frankenphp -n "$NS" --all-containers --tail=20
+             exit 1
+          fi

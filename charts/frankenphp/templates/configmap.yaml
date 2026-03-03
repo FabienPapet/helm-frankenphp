@@ -1,0 +1,11 @@
+{{- $name := printf "%s-caddyfile" .Release.Name }}
+{{- if .Values.caddyfile }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+data:
+  Caddyfile: |-
+{{ .Values.caddyfile | nindent 4 }}
+{{- end }}

@@ -1,0 +1,23 @@
+suite: Service
+templates:
+  - service.yaml
+tests:
+  - it: should be a valid Service
+    asserts:
+      - isKind:
+          of: Service
+      - isAPIVersion:
+          of: v1
+  - it: should use ClusterIP by default
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+  - it: should use configured port
+    set:
+      service:
+        port: 8080
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 8080

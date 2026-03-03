@@ -1,0 +1,64 @@
+suite: Deployment
+templates:
+  - crons.yaml
+values:
+  - ./values/_required.yaml
+documentIndex: 0
+set:
+  crons:
+    - name: "async-priority-autoscale"
+      command: "php worker.php"
+      schedule: "*/5 * * * *"
+tests:
+  - it: should be valid with defaults
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: CronJob
+      - isAPIVersion:
+          of: batch/v1
+      - equal:
+          path: spec.schedule
+          value: "*/5 * * * *"
+  - it: should have resources if set
+    documentIndex: 0
+    set:
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          memory: "256Mi"
+          cpu: "200m"
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+  - it: should have concurrencyPolicy if set
+    documentIndex: 0
+    set:
+      crons:
+        - name: "async-priority-autoscale"
+          command: "php worker.php"
+          schedule: "*/5 * * * *"
+          concurrencyPolicy: "Forbid"
+    asserts:
+      - equal:
+          path: spec.concurrencyPolicy
+          value: "Forbid"
+  - it: should not have concurrencyPolicy if not set
+    documentIndex: 0
+    asserts:
+      - notExists:
+          path: spec.concurrencyPolicy
+  - it: should not have resources if not set
+    documentIndex: 0
+    asserts:
+      - notExists:
+          path: spec.jobTemplate.spec.template.spec.containers[0].resources

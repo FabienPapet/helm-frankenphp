@@ -1,0 +1,38 @@
+suite: Jobs
+templates:
+  - jobs.yaml
+tests:
+  - it: should not create jobs by default
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should create a job with hook
+    set:
+      jobs:
+        - name: migrate
+          command: "php artisan migrate"
+          annotations:
+            "helm.sh/hook": pre-install
+    asserts:
+      - isKind:
+          of: Job
+      - matchRegex:
+          path: metadata.name
+          pattern: -job-migrate$
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: pre-install
+      - equal:
+          path: spec.template.spec.containers[0].args[0]
+          value: "php artisan migrate"
+  - it: should mount php.ini in jobs
+    set:
+      jobs:
+        - name: test
+          command: "cmd"
+      php:
+        ini: "conf"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: php-ini

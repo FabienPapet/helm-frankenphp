@@ -1,0 +1,65 @@
+suite: Deployment
+templates:
+  - deployment.yaml
+tests:
+  - it: should be a valid Deployment
+    asserts:
+      - isKind:
+          of: Deployment
+      - isAPIVersion:
+          of: apps/v1
+      - matchRegex:
+          path: metadata.name
+          pattern: RELEASE-NAME$
+  - it: should have correct replicas
+    set:
+      deployment:
+        replicas: 5
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 5
+  - it: should have correct image
+    set:
+      image:
+        repository: my-repo/image
+        tag: "1.2.3"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "my-repo/image:1.2.3"
+  - it: should have correct ports
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 80
+      - equal:
+          path: spec.template.spec.containers[0].ports[1].containerPort
+          value: 443
+      - equal:
+          path: spec.template.spec.containers[0].ports[2].containerPort
+          value: 2019
+  - it: should mount caddyfile volume if enabled
+    set:
+      caddyfile: "frankenphp"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: caddyfile
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: caddyfile
+  - it: should mount php.ini volume if enabled
+    set:
+      php:
+        ini: "memory_limit = 512M"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: php-ini
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].mountPath
+          value: /usr/local/etc/php/conf.d/99-custom.ini
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: php-ini

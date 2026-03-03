@@ -1,0 +1,55 @@
+# 09-complete-stack.yaml
+# Full stack configuration combining details
+
+image:
+  repository: fabienpapet/symfony-demo-frankenphp
+  tag: "latest"
+
+
+deployment:
+  replicas: 3
+
+# Custom PHP settings
+php:
+  ini: |
+    memory_limit = 512M
+    opcache.enable = 1
+
+# Workers
+consumers:
+  - name: "default"
+    command: "php bin/console messenger:consume sync"
+    replicas: 2
+    autoscale: true
+    # Note: autoscale requires logic in worker template which might not be fully implemented but shown for intent
+
+# Crons
+crons:
+  - name: "archive"
+    command: "php bin/console app:archive"
+    schedule: "0 2 * * 0"
+
+# Ingress
+ingress:
+  enabled: true
+  hosts:
+    - host: app.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: app-tls
+      hosts:
+        - app.example.com
+
+# Resources
+resources:
+  requests:
+    cpu: "10m"
+    memory: "512Mi"
+
+env:
+  - name: APP_ENV
+    value: prod
+  - name: SERVER_NAME
+    value: ":80"

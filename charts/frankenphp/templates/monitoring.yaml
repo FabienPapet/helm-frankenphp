@@ -1,0 +1,16 @@
+{{- if .Values.monitoring }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{- $name := printf "%s-%s" .Chart.Name .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "helm-frankenphp.selectorLabels" . | nindent 6 }}
+  podMetricsEndpoints:
+    - port: metrics # nom du port dans le pod spec, ou utilise `targetPort` ci-dessous
+      path: /metrics
+      interval: 15s
+      scheme: http
+{{- end }}

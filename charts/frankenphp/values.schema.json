@@ -1,0 +1,343 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": [
+        "image"
+    ],
+    "properties": {
+        "image": {
+            "type": "object",
+            "required": [
+                "repository",
+                "tag"
+            ],
+            "properties": {
+                "repository": {
+                    "type": "string",
+                    "description": "Docker image repository"
+                },
+                "tag": {
+                    "type": "string",
+                    "description": "Docker image tag"
+                },
+                "pullPolicy": {
+                    "type": "string",
+                    "enum": [
+                        "Always",
+                        "Never",
+                        "IfNotPresent"
+                    ],
+                    "description": "Image pull policy"
+                },
+                "pullSecrets": {
+                    "type": "array",
+                    "description": "Image pull secrets",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "php": {
+            "type": "object",
+            "description": "PHP configuration",
+            "properties": {
+                "ini": {
+                    "type": "string",
+                    "description": "Custom php.ini configuration"
+                }
+            }
+        },
+        "caddyfile": {
+            "type": "string",
+            "description": "Custom Caddyfile configuration"
+        },
+        "deployment": {
+            "type": "object",
+            "description": "Deployment configuration",
+            "properties": {
+                "replicas": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Number of replicas"
+                }
+            }
+        },
+        "resources": {
+            "type": "object",
+            "description": "Resource limits and requests",
+            "properties": {
+                "requests": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "env": {
+            "type": "array",
+            "description": "Environment variables",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "service": {
+            "type": "object",
+            "description": "Service configuration",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "ClusterIP",
+                        "NodePort",
+                        "LoadBalancer"
+                    ],
+                    "description": "Service type"
+                },
+                "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "description": "Service port"
+                }
+            }
+        },
+        "ingress": {
+            "type": "object",
+            "description": "Ingress configuration",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable ingress"
+                },
+                "className": {
+                    "type": "string",
+                    "description": "Ingress class name"
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Ingress annotations",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "hosts": {
+                    "type": "array",
+                    "description": "Ingress hosts",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "host": {
+                                "type": "string"
+                            },
+                            "paths": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "path": {
+                                            "type": "string"
+                                        },
+                                        "pathType": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Prefix",
+                                                "Exact",
+                                                "ImplementationSpecific"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "tls": {
+                    "type": "array",
+                    "description": "TLS configuration",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "secretName": {
+                                "type": "string"
+                            },
+                            "hosts": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "monitoring": {
+            "type": "boolean",
+            "description": "Enable Prometheus PodMonitor"
+        },
+        "serviceAccount": {
+            "type": "object",
+            "description": "ServiceAccount configuration",
+            "properties": {
+                "create": {
+                    "type": "boolean",
+                    "description": "Create a service account"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Service account name"
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Service account annotations",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "consumers": {
+            "type": "array",
+            "description": "Worker consumers configuration",
+            "items": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "command"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Consumer name"
+                    },
+                    "command": {
+                        "type": "string",
+                        "description": "Command to run"
+                    },
+                    "replicas": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Number of replicas"
+                    }
+                }
+            }
+        },
+        "crons": {
+            "type": "array",
+            "description": "CronJob configuration",
+            "items": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "command",
+                    "schedule"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "CronJob name"
+                    },
+                    "command": {
+                        "type": "string",
+                        "description": "Command to run"
+                    },
+                    "schedule": {
+                        "type": "string",
+                        "description": "Cron schedule"
+                    },
+                    "concurrencyPolicy": {
+                        "type": "string",
+                        "enum": [
+                            "Allow",
+                            "Forbid",
+                            "Replace"
+                        ],
+                        "description": "Concurrency policy"
+                    }
+                }
+            }
+        },
+        "jobs": {
+            "type": "array",
+            "description": "Jobs configuration",
+            "items": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "command"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Job name"
+                    },
+                    "command": {
+                        "type": "string",
+                        "description": "Command to run"
+                    },
+                    "annotations": {
+                        "type": "object",
+                        "description": "Job annotations (e.g., Helm hooks)",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "restartPolicy": {
+                        "type": "string",
+                        "enum": [
+                            "OnFailure",
+                            "Never"
+                        ],
+                        "description": "Restart policy"
+                    }
+                }
+            }
+        },
+        "affinity": {
+            "type": "object",
+            "description": "Pod affinity configuration"
+        },
+        "nodeSelector": {
+            "type": "object",
+            "description": "Node selector for pod scheduling"
+        },
+        "tolerations": {
+            "type": "array",
+            "description": "Pod tolerations",
+            "items": {
+                "type": "object"
+            }
+        }
+    }
+}

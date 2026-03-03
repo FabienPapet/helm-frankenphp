@@ -1,0 +1,22 @@
+# 02-production.yaml
+# Production configuration with fixed resources and limits
+image:
+  repository: fabienpapet/symfony-demo-frankenphp
+  tag: "latest"
+
+deployment:
+  replicas: 3
+
+resources:
+  requests:
+    cpu: "10m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+env:
+  - name: APP_ENV
+    value: prod
+  - name: SERVER_NAME
+    value: ":80"

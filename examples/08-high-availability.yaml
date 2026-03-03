@@ -1,0 +1,26 @@
+# 08-high-availability.yaml
+# High availability configuration with anti-affinity and multiple replicas
+image:
+  repository: fabienpapet/symfony-demo-frankenphp
+  tag: "latest"
+deployment:
+  replicas: 5
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - frankenphp
+          topologyKey: kubernetes.io/hostname
+

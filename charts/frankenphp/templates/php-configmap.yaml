@@ -1,0 +1,9 @@
+{{- if .Values.php.ini }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-php-ini
+data:
+  php.ini: |-
+{{ .Values.php.ini | indent 4 }}
+{{- end }}

@@ -1,0 +1,16 @@
+# 01-development.yaml
+# Development configuration
+image:
+  repository: fabienpapet/symfony-demo-frankenphp
+  tag: "latest"
+
+deployment:
+  replicas: 1
+
+env:
+  - name: APP_ENV
+    value: dev
+  - name: APP_DEBUG
+    value: "1"
+  - name: SERVER_NAME
+    value: :80

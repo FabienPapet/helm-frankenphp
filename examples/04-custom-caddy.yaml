@@ -1,0 +1,29 @@
+# 04-custom-caddy.yaml
+# Configuration with completely custom Caddyfile
+image:
+  repository: fabienpapet/symfony-demo-frankenphp
+  tag: "latest"
+
+caddyfile: |-
+  {
+    frankenphp
+    order php_server before file_server
+    admin off
+  }
+  
+  :80 {
+    root * /app/public
+    encode zstd br gzip
+    
+    # Custom log format
+    log {
+      output stdout
+      format json
+    }
+
+    php_server
+    file_server
+  }
+
+deployment:
+  replicas: 2

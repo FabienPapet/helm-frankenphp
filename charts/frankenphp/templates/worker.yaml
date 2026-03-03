@@ -1,0 +1,72 @@
+{{- $context := . }}
+{{- range .Values.consumers }}
+{{- $workerName := printf "%s-%s-%s" $.Release.Name "worker" .name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $workerName }}
+spec:
+{{- if not .autoscale }}
+  replicas: {{ .replicas | default 1 }}
+{{- end }}
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: {{ $workerName }}
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ $workerName }}
+    spec:
+      {{- with $.Values.serviceAccount }}
+      serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" . }}
+      {{- end }}
+      restartPolicy: Always
+      containers:
+        - name: {{ $workerName }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "touch /tmp/kill_me" ]
+          {{- with $.Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          command: # todo: find a better way to handle this
+            - "/bin/sh"
+            - "-c"
+            - {{ .command | quote }}
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          {{- if $.Values.php.ini }}
+          volumeMounts:
+            - name: php-ini
+              mountPath: /usr/local/etc/php/conf.d/99-custom.ini
+              subPath: php.ini
+          {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $.Values.php.ini }}
+      volumes:
+        - name: php-ini
+          configMap:
+            name: {{ $.Release.Name }}-php-ini
+      {{- end }}
+{{- end }}

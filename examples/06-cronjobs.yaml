@@ -1,0 +1,22 @@
+# 06-cronjobs.yaml
+# Configuration with scheduled tasks (CronJobs)
+image:
+  repository: fabienpapet/symfony-demo-frankenphp
+  tag: "latest"
+
+crons:
+  - name: "cleanup"
+    command: "php bin/console app:cleanup"
+    schedule: "0 0 * * *"
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 1
+  
+  - name: "report-daily"
+    command: "php bin/console app:report:daily"
+    schedule: "0 8 * * *"
+    resources:
+      limits:
+        memory: "512Mi"
+
+deployment:
+  replicas: 1

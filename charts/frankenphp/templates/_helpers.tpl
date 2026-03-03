@@ -30,6 +30,9 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
+{{- define "helm-frankenphp.env" -}}{{- end }}
+
+
 {{/*
 Common labels
 */}}
@@ -54,9 +57,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "helm-frankenphp.serviceAccountName" -}}
+{{- if .Values.serviceAccount }}
 {{- if .Values.serviceAccount.create }}
 {{- default (include "helm-frankenphp.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
+{{- end }}
 {{- end }}
 {{- end }}
