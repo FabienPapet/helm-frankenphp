@@ -3,7 +3,7 @@
 [![CI](https://github.com/FabienPapet/helm-frankenphp/actions/workflows/ci.yaml/badge.svg)](https://github.com/FabienPapet/helm-frankenphp/actions/workflows/ci.yaml)
 [![Helm Release](https://github.com/FabienPapet/helm-frankenphp/actions/workflows/release.yaml/badge.svg)](https://github.com/FabienPapet/helm-frankenphp/actions/workflows/release.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/frankenphp)](https://artifacthub.io/packages/search?repo=frankenphp)
 This repository contains a Helm chart to deploy docker images built with [FrankenPHP](https://frankenphp.dev/), the modern PHP application server built on top of Caddy, on Kubernetes.
 
 > [!TIP]
