@@ -91,7 +91,27 @@ ingress: {}
 
 monitoring: false
 
-#serviceAccount:
-#  create: false
-#  name: ""
-#  annotations: {}
+serviceAccount:
+  create: false
+  name: ""
+  annotations: {}
+
+# Shared volumes configuration
+# volumes:
+#   - name: shared-storage
+#     persistentVolumeClaim:
+#       claimName: my-pvc
+#   - name: cache
+#     emptyDir: {}
+#   - name: config
+#     configMap:
+#       name: my-config
+
+# volumeMounts:
+#   - name: shared-storage
+#     mountPath: /app/var/storage
+#   - name: cache
+#     mountPath: /app/var/cache
+#   - name: config
+#     mountPath: /app/config
+#     readOnly: true

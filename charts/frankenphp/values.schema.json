@@ -328,15 +328,49 @@
             "type": "object",
             "description": "Pod affinity configuration"
         },
-        "nodeSelector": {
-            "type": "object",
-            "description": "Node selector for pod scheduling"
-        },
-        "tolerations": {
+        "volumes": {
             "type": "array",
-            "description": "Pod tolerations",
+            "description": "Additional volumes to mount (supports PVC, emptyDir, hostPath, configMap, secret, etc.)",
             "items": {
-                "type": "object"
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Volume name"
+                    }
+                }
+            }
+        },
+        "volumeMounts": {
+            "type": "array",
+            "description": "Volume mounts for containers in all components (deployment, workers, crons, jobs)",
+            "items": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "mountPath"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Volume name to mount (must match a volume name)"
+                    },
+                    "mountPath": {
+                        "type": "string",
+                        "description": "Path where the volume should be mounted in the container"
+                    },
+                    "subPath": {
+                        "type": "string",
+                        "description": "Optional subPath within the volume"
+                    },
+                    "readOnly": {
+                        "type": "boolean",
+                        "description": "Mount the volume as read-only"
+                    }
+                }
             }
         }
     }
