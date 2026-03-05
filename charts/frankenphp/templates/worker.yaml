@@ -23,7 +23,9 @@ spec:
       labels:
         app: {{ $workerName }}
     spec:
+      {{- with $.Values.serviceAccount }}
       serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" $context }}
+      {{- end }}
       restartPolicy: Always
       containers:
         - name: {{ $workerName }}

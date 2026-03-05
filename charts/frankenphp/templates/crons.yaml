@@ -18,7 +18,9 @@ spec:
       backoffLimit: {{ (default .backoffLimit 0) }}
       template:
         spec:
-          serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" $context }}
+          {{- with $.Values.serviceAccount }}
+          serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" . }}
+          {{- end }}
           restartPolicy: {{ (default .restartPolicy "Never") }}
           containers:
             - name: {{ $cronName | lower }}
