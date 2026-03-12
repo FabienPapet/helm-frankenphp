@@ -48,6 +48,7 @@ spec:
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- if or .Values.caddyfile .Values.php.ini .Values.volumeMounts }}
           volumeMounts:
           {{- if .Values.caddyfile }}
             - name: caddyfile
@@ -61,6 +62,7 @@ spec:
           {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -73,6 +75,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if or .Values.caddyfile .Values.php.ini .Values.volumes }}
       volumes:
       {{- if .Values.caddyfile }}
         - name: caddyfile # To access this volume, this name must be used inside volumeMounts of the container
@@ -89,5 +92,6 @@ spec:
       {{- end }}
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}
 {{- end }}

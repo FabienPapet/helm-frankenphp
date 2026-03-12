@@ -55,42 +55,6 @@ helm install my-app frankenphp/frankenphp -f values.yaml
 
 ## Development
 
-### Volume Management
-
-The chart supports mounting arbitrary volumes (Kubernetes Secrets, ConfigMaps, PersistentVolumeClaims, etc.) into **all pods** (deployment, workers, crons, jobs) via `volumes` and `volumeMounts`.
-
-> [!IMPORTANT]
-> Kubernetes Secrets must be created **before** installing or upgrading the chart. The chart does not create secrets for you — this keeps sensitive data out of Helm values and release history.
-
-**Example: Symfony decrypt key**
-
-1. Create the Kubernetes Secret:
-
-```bash
-kubectl create secret generic symfony-secrets \
-  --from-file=prod.decrypt.private.php=config/secrets/prod/prod.decrypt.private.php
-```
-
-2. Reference it in your `values.yaml`:
-
-```yaml
-volumes:
-  - name: symfony-decrypt-key
-    secret:
-      secretName: symfony-secrets
-      items:
-        - key: prod.decrypt.private.php
-          path: prod.decrypt.private.php
-
-volumeMounts:
-  - name: symfony-decrypt-key
-    mountPath: /app/config/secrets/prod/prod.decrypt.private.php
-    subPath: prod.decrypt.private.php
-    readOnly: true
-```
-
-See [examples/11-secrets-volumes.yaml](examples/11-secrets-volumes.yaml) for a complete example.
-
 ### Run Unit Tests & Validation
 
 This chart uses the `helm-unittest` plugin and `kubeconform`.
