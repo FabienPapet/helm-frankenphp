@@ -43,11 +43,16 @@ spec:
           {{- end }}
           resources:
             {{- toYaml ($job.resources | default $context.Values.resources) | nindent 12 }}
-          {{- if $context.Values.php.ini }}
+          {{- if or $context.Values.php.ini $context.Values.volumeMounts }}
           volumeMounts:
+            {{- if $context.Values.php.ini }}
             - name: php-ini
               mountPath: /usr/local/etc/php/conf.d/99-custom.ini
               subPath: php.ini
+            {{- end }}
+            {{- with $context.Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
       {{- with $context.Values.nodeSelector }}
       nodeSelector:
@@ -61,10 +66,15 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if $context.Values.php.ini }}
+      {{- if or $context.Values.php.ini $context.Values.volumes }}
       volumes:
+        {{- if $context.Values.php.ini }}
         - name: php-ini
           configMap:
             name: {{ $context.Release.Name }}-php-ini
+        {{- end }}
+        {{- with $context.Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
 {{- end }}

@@ -56,6 +56,23 @@ nodeSelector: {}
 
 tolerations: []
 
+# Extra volumes to mount into all pods (deployment, workers, crons, jobs).
+# Use this to inject secrets or configmaps as files into your containers.
+volumes: []
+#  - name: symfony-decrypt-key
+#    secret:
+#      secretName: my-symfony-secrets
+#      items:
+#        - key: decrypt
+#          path: prod.decrypt.private.php
+
+# Extra volume mounts to add to all containers.
+volumeMounts: []
+#  - name: symfony-decrypt-key
+#    mountPath: /app/config/secrets/prod/prod.decrypt.private.php
+#    subPath: prod.decrypt.private.php
+#    readOnly: true
+
 env:
   - name: "SERVER_NAME"
     value: ":80"

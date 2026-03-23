@@ -1,0 +1,226 @@
+suite: Volume Management
+templates:
+  - deployment.yaml
+  - worker.yaml
+  - crons.yaml
+  - jobs.yaml
+
+tests:
+  # --- Deployment ---
+
+  - it: should mount extra volume in Deployment
+    template: deployment.yaml
+    set:
+      volumes:
+        - name: symfony-decrypt-key
+          secret:
+            secretName: symfony-secrets
+      volumeMounts:
+        - name: symfony-decrypt-key
+          mountPath: /app/config/secrets/prod/prod.decrypt.private.php
+          subPath: prod.decrypt.private.php
+          readOnly: true
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: symfony-decrypt-key
+      - equal:
+          path: spec.template.spec.volumes[0].secret.secretName
+          value: symfony-secrets
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: symfony-decrypt-key
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].mountPath
+          value: /app/config/secrets/prod/prod.decrypt.private.php
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].readOnly
+          value: true
+
+  - it: should not add volumes section when volumes is empty in Deployment
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.volumes
+
+  - it: should append extra volumeMount after php-ini in Deployment
+    template: deployment.yaml
+    set:
+      php:
+        ini: "memory_limit = 512M"
+      volumes:
+        - name: my-secret
+          secret:
+            secretName: my-secret
+      volumeMounts:
+        - name: my-secret
+          mountPath: /app/secret
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: php-ini
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[1].name
+          value: my-secret
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: php-ini
+      - equal:
+          path: spec.template.spec.volumes[1].name
+          value: my-secret
+
+  # --- Worker ---
+
+  - it: should mount extra volume in Worker
+    template: worker.yaml
+    set:
+      consumers:
+        - name: queue
+          command: "php bin/console messenger:consume"
+      volumes:
+        - name: symfony-decrypt-key
+          secret:
+            secretName: symfony-secrets
+      volumeMounts:
+        - name: symfony-decrypt-key
+          mountPath: /app/config/secrets/prod/prod.decrypt.private.php
+          subPath: prod.decrypt.private.php
+          readOnly: true
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: symfony-decrypt-key
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: symfony-decrypt-key
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].mountPath
+          value: /app/config/secrets/prod/prod.decrypt.private.php
+
+  - it: should append extra volumeMount after php-ini in Worker
+    template: worker.yaml
+    set:
+      consumers:
+        - name: queue
+          command: "php bin/console messenger:consume"
+      php:
+        ini: "memory_limit = 512M"
+      volumes:
+        - name: my-secret
+          secret:
+            secretName: my-secret
+      volumeMounts:
+        - name: my-secret
+          mountPath: /app/secret
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: php-ini
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[1].name
+          value: my-secret
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: php-ini
+      - equal:
+          path: spec.template.spec.volumes[1].name
+          value: my-secret
+
+  # --- CronJob ---
+
+  - it: should mount extra volume in CronJob
+    template: crons.yaml
+    set:
+      crons:
+        - name: my-cron
+          command: "php bin/console app:run"
+          schedule: "*/5 * * * *"
+      volumes:
+        - name: symfony-decrypt-key
+          secret:
+            secretName: symfony-secrets
+      volumeMounts:
+        - name: symfony-decrypt-key
+          mountPath: /app/config/secrets/prod/prod.decrypt.private.php
+          subPath: prod.decrypt.private.php
+          readOnly: true
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.volumes[0].name
+          value: symfony-decrypt-key
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].volumeMounts[0].name
+          value: symfony-decrypt-key
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].volumeMounts[0].mountPath
+          value: /app/config/secrets/prod/prod.decrypt.private.php
+
+  - it: should not add volumes in CronJob when volumes is empty
+    template: crons.yaml
+    set:
+      crons:
+        - name: my-cron
+          command: "php bin/console app:run"
+          schedule: "*/5 * * * *"
+    asserts:
+      - notExists:
+          path: spec.jobTemplate.spec.template.spec.volumes
+      - notExists:
+          path: spec.jobTemplate.spec.template.spec.containers[0].volumeMounts
+
+  # --- Job ---
+
+  - it: should mount extra volume in Job
+    template: jobs.yaml
+    set:
+      jobs:
+        - name: migrate
+          command: "php bin/console doctrine:migrations:migrate"
+      volumes:
+        - name: symfony-decrypt-key
+          secret:
+            secretName: symfony-secrets
+      volumeMounts:
+        - name: symfony-decrypt-key
+          mountPath: /app/config/secrets/prod/prod.decrypt.private.php
+          subPath: prod.decrypt.private.php
+          readOnly: true
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: symfony-decrypt-key
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: symfony-decrypt-key
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].mountPath
+          value: /app/config/secrets/prod/prod.decrypt.private.php
+
+  - it: should append extra volumeMount after php-ini in Job
+    template: jobs.yaml
+    set:
+      jobs:
+        - name: migrate
+          command: "php bin/console doctrine:migrations:migrate"
+      php:
+        ini: "memory_limit = 512M"
+      volumes:
+        - name: my-secret
+          secret:
+            secretName: my-secret
+      volumeMounts:
+        - name: my-secret
+          mountPath: /app/secret
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: php-ini
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[1].name
+          value: my-secret
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: php-ini
+      - equal:
+          path: spec.template.spec.volumes[1].name
+          value: my-secret

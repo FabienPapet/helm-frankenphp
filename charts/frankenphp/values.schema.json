@@ -338,6 +338,20 @@
             "items": {
                 "type": "object"
             }
+        },
+        "volumes": {
+            "type": "array",
+            "description": "Extra volumes to add to all pods",
+            "items": {
+                "type": "object"
+            }
+        },
+        "volumeMounts": {
+            "type": "array",
+            "description": "Extra volume mounts to add to all containers",
+            "items": {
+                "type": "object"
+            }
         }
     }
 }

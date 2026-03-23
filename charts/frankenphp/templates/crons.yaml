@@ -37,6 +37,12 @@ spec:
               env:
                 {{- toYaml . | nindent 16 }}
               {{- end }}
+              {{- if or $.Values.volumeMounts }}
+              volumeMounts:
+                {{- with $.Values.volumeMounts }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
+              {{- end }}
           {{- with $.Values.nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 12 }}
@@ -47,6 +53,10 @@ spec:
           {{- end }}
           {{- with $.Values.tolerations }}
           tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.volumes }}
+          volumes:
             {{- toYaml . | nindent 12 }}
           {{- end }}
 {{- end }}

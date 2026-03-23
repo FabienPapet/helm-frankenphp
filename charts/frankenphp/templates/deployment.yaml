@@ -48,6 +48,7 @@ spec:
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- if or .Values.caddyfile .Values.php.ini .Values.volumeMounts }}
           volumeMounts:
           {{- if .Values.caddyfile }}
             - name: caddyfile
@@ -57,6 +58,10 @@ spec:
             - name: php-ini
               mountPath: /usr/local/etc/php/conf.d/99-custom.ini
               subPath: php.ini
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -70,6 +75,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if or .Values.caddyfile .Values.php.ini .Values.volumes }}
       volumes:
       {{- if .Values.caddyfile }}
         - name: caddyfile # To access this volume, this name must be used inside volumeMounts of the container
@@ -83,5 +89,9 @@ spec:
         - name: php-ini
           configMap:
             name: {{ .Release.Name }}-php-ini
+      {{- end }}
+      {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}
 {{- end }}

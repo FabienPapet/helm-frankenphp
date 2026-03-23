@@ -19,6 +19,7 @@ This repository contains a Helm chart to deploy docker images built with [Franke
 - **Jobs/Hooks**: Run migrations or one-off tasks using Helm hooks.
 - **Monitoring**: Integrated `PodMonitor` for Prometheus (requires Prometheus Operator).
 - **Scheduling**: Support for `nodeSelector`, `affinity`, and `tolerations` for all pods.
+- **Volume Management**: Mount any Kubernetes volume (Secrets, ConfigMaps, PVCs) into all pods.
 
 ## Examples
 
@@ -31,6 +32,7 @@ Some configuration examples are available in the [examples/](examples/) director
 - [Jobs](examples/07-jobs.yaml)
 - [High Availability](examples/08-high-availability.yaml)
 - [Production Setup](examples/02-production.yaml)
+- [Secrets & Volume Mounts](examples/11-secrets-volumes.yaml)
 
 ## Installation
 
