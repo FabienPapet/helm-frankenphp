@@ -13,6 +13,14 @@ tests:
       - matchRegex:
           path: metadata.name
           pattern: -worker-queue$
+  - it: should have labels in metadata
+    set:
+      consumers:
+        - name: "queue"
+          command: "cmd"
+    asserts:
+      - exists:
+          path: metadata.labels
   - it: should mount php.ini in worker
     set:
       consumers:
@@ -27,3 +35,43 @@ tests:
       - equal:
           path: spec.template.spec.volumes[0].name
           value: php-ini
+  - it: should have imagePullPolicy from global value
+    set:
+      consumers:
+        - name: "queue"
+          command: "cmd"
+      image:
+        pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+  - it: should default imagePullPolicy to IfNotPresent
+    set:
+      consumers:
+        - name: "queue"
+          command: "cmd"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+  - it: should have imagePullSecrets if set
+    set:
+      consumers:
+        - name: "queue"
+          command: "cmd"
+      image:
+        pullSecrets:
+          - name: mySecret
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: mySecret
+  - it: should not have resources if not set
+    set:
+      consumers:
+        - name: "queue"
+          command: "cmd"
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].resources

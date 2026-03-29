@@ -63,3 +63,48 @@ tests:
       - equal:
           path: spec.template.spec.volumes[0].name
           value: php-ini
+  - it: should default imagePullPolicy to IfNotPresent
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+  - it: should use global imagePullPolicy when set
+    set:
+      image:
+        pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+  - it: should have imagePullSecrets if set
+    set:
+      image:
+        pullSecrets:
+          - name: mySecret
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: mySecret
+  - it: should not have resources if not set
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].resources
+  - it: should have resources if set
+    set:
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "100m"
+  - it: should set serviceAccountName when serviceAccount is configured
+    set:
+      serviceAccount:
+        create: true
+        name: my-sa
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: my-sa

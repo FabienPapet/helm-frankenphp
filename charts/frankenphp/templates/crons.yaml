@@ -5,6 +5,8 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ $cronName }}-{{ .name }}
+  labels:
+    {{- include "helm-frankenphp.labels" $ | nindent 4 }}
 spec:
   schedule: "{{ .schedule }}"
   successfulJobsHistoryLimit: {{ (default .successfulJobsHistoryLimit 1) }}
@@ -17,28 +19,37 @@ spec:
       backoffLimit: {{ (default .backoffLimit 0) }}
       template:
         spec:
-          {{- with $.Values.serviceAccount }}
-          serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" . }}
+          {{- with $.Values.image.pullSecrets | default (list)}}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if $.Values.serviceAccount }}
+          serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" $ }}
           {{- end }}
           restartPolicy: {{ (default .restartPolicy "Never") }}
           containers:
             - name: {{ $cronName | lower }}
-              image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
-              imagePullPolicy: {{ (default .imagePullPolicy "IfNotPresent") }}
+              image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+              imagePullPolicy: {{ $.Values.image.pullPolicy | default "IfNotPresent" }}
               command:
                 - "/bin/sh"
                 - "-c"
                 - {{ .command }};
-              {{- if $.Values.resources }}
+              {{- with $.Values.resources }}
               resources:
-                {{- toYaml $.Values.resources | nindent 16 }}
+                {{- toYaml . | nindent 16 }}
               {{- end }}
               {{- with $.Values.env }}
               env:
                 {{- toYaml . | nindent 16 }}
               {{- end }}
-              {{- if or $.Values.volumeMounts }}
+              {{- if or $.Values.php.ini $.Values.volumeMounts }}
               volumeMounts:
+                {{- if $.Values.php.ini }}
+                - name: php-ini
+                  mountPath: /usr/local/etc/php/conf.d/99-custom.ini
+                  subPath: php.ini
+                {{- end }}
                 {{- with $.Values.volumeMounts }}
                 {{- toYaml . | nindent 16 }}
                 {{- end }}
@@ -55,8 +66,15 @@ spec:
           tolerations:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with $.Values.volumes }}
+          {{- if or $.Values.php.ini $.Values.volumes }}
           volumes:
+            {{- if $.Values.php.ini }}
+            - name: php-ini
+              configMap:
+                name: {{ $.Release.Name }}-php-ini
+            {{- end }}
+            {{- with $.Values.volumes }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
 {{- end }}

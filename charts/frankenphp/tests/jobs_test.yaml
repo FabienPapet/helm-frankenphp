@@ -36,3 +36,78 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].volumeMounts[0].name
           value: php-ini
+  - it: should default imagePullPolicy to IfNotPresent
+    set:
+      jobs:
+        - name: test
+          command: "cmd"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+  - it: should use global imagePullPolicy when set
+    set:
+      jobs:
+        - name: test
+          command: "cmd"
+      image:
+        pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+  - it: should set serviceAccountName when serviceAccount is configured
+    set:
+      jobs:
+        - name: test
+          command: "cmd"
+      serviceAccount:
+        create: true
+        name: my-sa
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: my-sa
+  - it: should not have serviceAccountName when serviceAccount is not set
+    set:
+      jobs:
+        - name: test
+          command: "cmd"
+    asserts:
+      - notExists:
+          path: spec.template.spec.serviceAccountName
+  - it: should not have resources if not set
+    set:
+      jobs:
+        - name: test
+          command: "cmd"
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].resources
+  - it: should use global resources when set
+    set:
+      jobs:
+        - name: test
+          command: "cmd"
+      resources:
+        requests:
+          cpu: "100m"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "100m"
+  - it: should use per-job resources override
+    set:
+      jobs:
+        - name: test
+          command: "cmd"
+          resources:
+            requests:
+              cpu: "500m"
+      resources:
+        requests:
+          cpu: "100m"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "500m"

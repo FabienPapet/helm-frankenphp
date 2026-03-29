@@ -168,6 +168,36 @@ tests:
       - notExists:
           path: spec.jobTemplate.spec.template.spec.containers[0].volumeMounts
 
+  - it: should append extra volumeMount after php-ini in CronJob
+    template: crons.yaml
+    set:
+      crons:
+        - name: my-cron
+          command: "php bin/console app:run"
+          schedule: "*/5 * * * *"
+      php:
+        ini: "memory_limit = 512M"
+      volumes:
+        - name: my-secret
+          secret:
+            secretName: my-secret
+      volumeMounts:
+        - name: my-secret
+          mountPath: /app/secret
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].volumeMounts[0].name
+          value: php-ini
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].volumeMounts[1].name
+          value: my-secret
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.volumes[0].name
+          value: php-ini
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.volumes[1].name
+          value: my-secret
+
   # --- Job ---
 
   - it: should mount extra volume in Job
