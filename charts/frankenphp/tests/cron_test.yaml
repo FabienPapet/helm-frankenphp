@@ -20,6 +20,11 @@ tests:
       - equal:
           path: spec.schedule
           value: "*/5 * * * *"
+  - it: should have labels in metadata
+    documentIndex: 0
+    asserts:
+      - exists:
+          path: metadata.labels
   - it: should have resources if set
     documentIndex: 0
     set:
@@ -62,3 +67,53 @@ tests:
     asserts:
       - notExists:
           path: spec.jobTemplate.spec.template.spec.containers[0].resources
+  - it: should default imagePullPolicy to IfNotPresent
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+  - it: should use global imagePullPolicy when set
+    documentIndex: 0
+    set:
+      image:
+        pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+  - it: should have imagePullSecrets if set
+    documentIndex: 0
+    set:
+      image:
+        pullSecrets:
+          - name: mySecret
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.imagePullSecrets[0].name
+          value: mySecret
+  - it: should mount php.ini in cron
+    documentIndex: 0
+    set:
+      php:
+        ini: "memory_limit = 512M"
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].volumeMounts[0].name
+          value: php-ini
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].volumeMounts[0].mountPath
+          value: /usr/local/etc/php/conf.d/99-custom.ini
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.volumes[0].name
+          value: php-ini
+  - it: should set serviceAccountName when serviceAccount is configured
+    documentIndex: 0
+    set:
+      serviceAccount:
+        create: true
+        name: my-sa
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.serviceAccountName
+          value: my-sa

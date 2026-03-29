@@ -6,6 +6,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $workerName }}
+  labels:
+    {{- include "helm-frankenphp.labels" $ | nindent 4 }}
 spec:
 {{- if not .autoscale }}
   replicas: {{ .replicas | default 1 }}
@@ -23,13 +25,18 @@ spec:
       labels:
         app: {{ $workerName }}
     spec:
-      {{- with $.Values.serviceAccount }}
-      serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" . }}
+      {{- with $.Values.image.pullSecrets | default (list)}}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $.Values.serviceAccount }}
+      serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" $ }}
       {{- end }}
       restartPolicy: Always
       containers:
         - name: {{ $workerName }}
-          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy | default "IfNotPresent" }}
           lifecycle:
             preStop:
               exec:
@@ -38,13 +45,14 @@ spec:
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-
           command: # todo: find a better way to handle this
             - "/bin/sh"
             - "-c"
             - {{ .command | quote }}
+          {{- with $.Values.resources }}
           resources:
-            {{- toYaml $.Values.resources | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- if or $.Values.php.ini $.Values.volumeMounts }}
           volumeMounts:
             {{- if $.Values.php.ini }}

@@ -29,11 +29,14 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if $context.Values.serviceAccount }}
+      serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" $context }}
+      {{- end }}
       restartPolicy: {{ $job.restartPolicy | default "OnFailure" }}
       containers:
         - name: {{ $job.name | replace "_" "-" }}
           image: "{{ $context.Values.image.repository }}:{{ $context.Values.image.tag | default $context.Chart.AppVersion }}"
-          imagePullPolicy: {{ $context.Values.image.pullPolicy | default "Always" }}
+          imagePullPolicy: {{ $context.Values.image.pullPolicy | default "IfNotPresent" }}
           command: ["/bin/sh", "-c"]
           args:
             - {{ $job.command }}
@@ -41,8 +44,10 @@ spec:
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with ($job.resources | default $context.Values.resources) }}
           resources:
-            {{- toYaml ($job.resources | default $context.Values.resources) | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- if or $context.Values.php.ini $context.Values.volumeMounts }}
           volumeMounts:
             {{- if $context.Values.php.ini }}
