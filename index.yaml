@@ -3,6 +3,30 @@ entries:
   frankenphp:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2026-04-02T20:34:18.384911475Z"
+    description: High-performance PHP server with Caddy and FrankenPHP on Kubernetes
+    digest: 337a967ec0f6d3ea9de6003ac1d4ebbccb572df0c70e0c417da36a1521ff9bd9
+    home: https://github.com/FabienPapet/helm-frankenphp
+    keywords:
+    - php
+    - frankenphp
+    - caddy
+    - kubernetes
+    - symfony
+    - laravel
+    maintainers:
+    - email: fabien.papet@gmail.com
+      name: FabienPapet
+    name: frankenphp
+    sources:
+    - https://github.com/FabienPapet/helm-frankenphp
+    - https://github.com/php/frankenphp
+    type: application
+    urls:
+    - https://github.com/FabienPapet/helm-frankenphp/releases/download/frankenphp-0.3.0/frankenphp-0.3.0.tgz
+    version: 0.3.0
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2026-03-27T17:44:23.204054896Z"
     description: High-performance PHP server with Caddy and FrankenPHP on Kubernetes
     digest: a5141d20166246bb3f02bfe640ee46b7b9f0de56798aee2fcf0423fdda6fb985
@@ -49,4 +73,4 @@ entries:
     urls:
     - https://github.com/FabienPapet/helm-frankenphp/releases/download/frankenphp-0.1.1/frankenphp-0.1.1.tgz
     version: 0.1.1
-generated: "2026-03-27T17:44:23.204062559Z"
+generated: "2026-04-02T20:34:18.384923527Z"
