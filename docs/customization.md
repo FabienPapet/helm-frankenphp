@@ -116,3 +116,95 @@ startupProbe:
 
 While the startup probe is active, liveness and readiness probes are paused. Only after the startup
 probe succeeds do the other probes take over.
+
+## Environment Variables from Secrets and ConfigMaps
+
+In addition to literal `value` entries, you can use Kubernetes `valueFrom` to source environment
+variables from Secrets, ConfigMaps, or the pod's own metadata:
+
+```yaml
+env:
+  - name: APP_ENV
+    value: prod
+  - name: DATABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: database-secrets
+        key: url
+  - name: REDIS_HOST
+    valueFrom:
+      configMapKeyRef:
+        name: app-config
+        key: redis_host
+  - name: MY_POD_IP
+    valueFrom:
+      fieldRef:
+        fieldPath: status.podIP
+```
+
+## Init Containers
+
+Use `initContainers` to run one or more containers before the main app starts. Common use cases
+include waiting for a dependency (database, cache), rendering configuration files, or running
+database migrations before the web server accepts traffic.
+
+```yaml
+initContainers:
+  - name: wait-for-db
+    image: busybox
+    command: ['sh', '-c', 'until nc -z db 5432; do sleep 2; done']
+  - name: run-migrations
+    image: my-app:latest
+    command: ['php', 'bin/console', 'doctrine:migrations:migrate', '--no-interaction']
+    env:
+      - name: DATABASE_URL
+        valueFrom:
+          secretKeyRef:
+            name: database-secrets
+            key: url
+```
+
+Init containers are applied to all workloads (deployment, workers, crons, and jobs).
+
+## Topology Spread Constraints
+
+Distribute pods across failure domains (nodes, availability zones) to improve resilience:
+
+```yaml
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: frankenphp
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: frankenphp
+```
+
+This ensures pods are spread evenly across nodes and prefer to span multiple availability zones.
+`topologySpreadConstraints` is applied to all workloads.
+
+## Priority Class
+
+Assign a Kubernetes `PriorityClass` to control scheduling priority under resource pressure:
+
+```yaml
+priorityClassName: high-priority
+```
+
+Create the PriorityClass in your cluster first:
+
+```yaml
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 1000000
+globalDefault: false
+description: "Used for critical FrankenPHP web tier pods"
+```

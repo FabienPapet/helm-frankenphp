@@ -202,3 +202,43 @@ startupProbe:
 ```
 
 See `examples/13-startup-probe.yaml` for a full example.
+
+## Init Containers
+
+Run one or more init containers before the main app starts. This is useful for dependency checks,
+migrations, or config rendering:
+
+```yaml
+initContainers:
+  - name: wait-for-db
+    image: busybox
+    command: ['sh', '-c', 'until nc -z db 5432; do sleep 2; done']
+```
+
+Init containers are applied to all workloads (deployment, workers, crons, and jobs).
+
+## Topology Spread Constraints
+
+Spread pods across nodes or availability zones for improved resilience:
+
+```yaml
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: frankenphp
+```
+
+Applied to all workloads. See [customization.md](customization.md) for more detail.
+
+## Priority Class
+
+Assign a scheduling priority class to all pods:
+
+```yaml
+priorityClassName: high-priority
+```
+
+Applied to all workloads. Requires the `PriorityClass` resource to exist in the cluster.

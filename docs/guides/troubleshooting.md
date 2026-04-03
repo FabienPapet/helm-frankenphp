@@ -160,3 +160,70 @@ kubectl create secret docker-registry my-registry-secret \
   --docker-username=<username> \
   --docker-password=<password>
 ```
+
+---
+
+## Worker Not Processing Messages
+
+**Symptoms:** Messages pile up in the queue; consumers report no activity or exit immediately.
+
+**Check worker deployment status:**
+```bash
+kubectl get deployments -l app.kubernetes.io/name=frankenphp
+kubectl logs -l app=<release-name>-worker-<consumer-name> --tail=50
+```
+
+**Common causes:**
+
+- **Wrong command** — verify the command in `consumers[].command` is correct for your queue driver:
+  ```yaml
+  consumers:
+    - name: queue
+      command: "php bin/console messenger:consume async --time-limit=3600"
+  ```
+
+- **Worker exiting too fast** — some workers exit after processing a batch. This is fine if you have `restartPolicy: Always` (default). Check the pod restart count:
+  ```bash
+  kubectl get pods -l app=<release-name>-worker-<consumer-name>
+  ```
+
+- **Insufficient replicas** — scale up workers:
+  ```yaml
+  consumers:
+    - name: queue
+      command: "php bin/console messenger:consume async"
+      replicas: 3
+  ```
+
+- **Missing terminationGracePeriodSeconds** — workers processing long tasks may be killed mid-flight during upgrades. Increase the grace period:
+  ```yaml
+  terminationGracePeriodSeconds: 120
+  ```
+
+- **Worker needs database connection before starting** — use an init container to wait for readiness:
+  ```yaml
+  initContainers:
+    - name: wait-for-db
+      image: busybox
+      command: ['sh', '-c', 'until nc -z db 5432; do sleep 2; done']
+  ```
+
+---
+
+## CronJob Not Running on Schedule
+
+**Symptoms:** CronJob exists but no Jobs are created at the expected time.
+
+**Check:**
+```bash
+kubectl get cronjobs
+kubectl describe cronjob <release-name>-<cron-name>
+kubectl get jobs --sort-by=.metadata.creationTimestamp
+```
+
+**Common causes:**
+
+- **Timezone issues** — Kubernetes CronJob schedules use UTC by default. Adjust your schedule accordingly.
+- **concurrencyPolicy: Forbid blocking** — if a previous run is still active and `concurrencyPolicy: Forbid` is set, no new job will start. Use `concurrencyPolicy: Replace` or increase the job timeout.
+- **failedJobsHistoryLimit too low** — if set to `0`, failed jobs are immediately deleted, making debugging harder. Keep the default of `3`.
+- **Wrong schedule syntax** — validate your cron expression using a tool like [crontab.guru](https://crontab.guru/).
