@@ -87,3 +87,103 @@ By using annotations like `"helm.sh/hook": post-install`, you ensure that migrat
 - **Environment Variables**: The `env` list defined at the root of `values.yaml` is injected into **all** pods (Main application, Workers, Crons, and Jobs).
 - **PHP Config**: The `php.ini` defined globally is also shared across all these components.
 - **Service Account**: All components share the same ServiceAccount configuration.
+
+## Autoscaling (HPA)
+
+The chart supports Kubernetes `HorizontalPodAutoscaler` (autoscaling/v2) for the main deployment and individual workers.
+
+### Main Deployment HPA
+
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 75
+```
+
+> **Note:** When `autoscaling.enabled: true`, the `spec.replicas` field is omitted from the Deployment to avoid conflicts with the HPA. You must have [metrics-server](https://github.com/kubernetes-sigs/metrics-server) installed in your cluster.
+
+### Worker HPA
+
+Each worker can independently enable HPA via the `autoscale` flag:
+
+```yaml
+consumers:
+  - name: "queue"
+    command: "php bin/console messenger:consume async"
+    autoscale: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+```
+
+## Pod Disruption Budget
+
+To ensure availability during voluntary disruptions (e.g., node maintenance), enable the PodDisruptionBudget:
+
+```yaml
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2  # must be less than deployment.replicas
+```
+
+Or use `maxUnavailable` instead of `minAvailable`:
+
+```yaml
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+```
+
+> **Note:** A PDB only makes sense when you have more than 1 replica. Ensure `minAvailable` is less than your replica count, otherwise node drains will block.
+
+## Security Context
+
+You can configure pod- and container-level security contexts to harden your workloads:
+
+```yaml
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+```
+
+Security contexts are applied to all workloads: the main deployment, workers, crons, and jobs.
+
+> **Note:** `readOnlyRootFilesystem: true` may cause issues with FrankenPHP/Caddy as it writes temporary files. Test carefully before enabling this in production.
+
+## Health Probes
+
+Configure liveness and readiness probes to enable Kubernetes self-healing and proper traffic management:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  failureThreshold: 3
+```
+
+Probes are applied to both the main deployment and workers. By default, no probes are configured.

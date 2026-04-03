@@ -54,3 +54,47 @@ env:
   - name: MY_CUSTOM_VARIABLE
     value: "some-value"
 ```
+
+## Security Context
+
+Harden your containers with pod- and container-level security contexts:
+
+```yaml
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+```
+
+Both contexts are optional and empty by default to preserve backwards compatibility with all FrankenPHP images.
+
+## Health Probes
+
+Add liveness and readiness probes to improve reliability and traffic management:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+```
+
+You can also use `exec` or `tcpSocket` probe types. Probes are applied to the main deployment and all workers.

@@ -28,6 +28,71 @@ resources:
 
 - Use a specific image tag (e.g., `1.1.0-php8.3`) instead of `latest` to ensure reproducibility.
 - If your registry requires authentication, configure `imagePullSecrets`.
+- Harden your containers with security contexts:
+
+```yaml
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+```
+
+> **Note:** `readOnlyRootFilesystem: true` may cause issues with FrankenPHP/Caddy. Test carefully.
+
+## Pod Disruption Budget
+
+For production, configure a PodDisruptionBudget to maintain availability during node maintenance:
+
+```yaml
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2  # must be less than deployment.replicas
+```
+
+## Autoscaling
+
+Use HPA to automatically scale the deployment based on CPU/memory:
+
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+```
+
+> **Requirement:** [metrics-server](https://github.com/kubernetes-sigs/metrics-server) must be installed. Also set `resources.requests.cpu` — HPA calculates utilization relative to requests.
+
+## Health Probes
+
+Add probes to enable Kubernetes self-healing and proper traffic steering:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  failureThreshold: 3
+```
 
 ## Networking
 
