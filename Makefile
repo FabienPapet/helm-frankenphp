@@ -1,10 +1,13 @@
-.PHONY: unit-test lint validate install-kubeconform
+.PHONY: unit-test lint yamllint validate install-kubeconform
 
 unit-test:
 	cd charts/frankenphp; helm unittest .
 
 lint:
 	helm lint charts/frankenphp
+
+yamllint:
+	yamllint examples/ docs/ -c .yamllint
 
 install-kubeconform:
 	@VERSION=v0.6.4; \

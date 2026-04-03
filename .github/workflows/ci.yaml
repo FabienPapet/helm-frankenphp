@@ -20,6 +20,12 @@ jobs:
       - name: Lint
         run: make lint
 
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Yamllint
+        run: make yamllint
+
       - name: Install unittest plugin
         run: helm plugin install https://github.com/helm-unittest/helm-unittest.git --version 0.8.2
 

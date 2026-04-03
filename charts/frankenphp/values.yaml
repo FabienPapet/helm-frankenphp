@@ -58,6 +58,11 @@ jobs: []
 #      "helm.sh/hook": post-install,post-upgrade
 #      "helm.sh/hook-delete-policy": before-hook-creation
 #    restartPolicy: OnFailure
+#    ttlSecondsAfterFinished: 300
+#    resources:            # per-job resource override (takes precedence over global resources)
+#      requests:
+#        cpu: "200m"
+#        memory: "256Mi"
 
 consumers: []
 #  - name: "queue"
