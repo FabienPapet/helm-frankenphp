@@ -426,6 +426,22 @@
         "readinessProbe": {
             "type": "object",
             "description": "Readiness probe configuration for the main deployment and workers"
+        },
+        "podDisruptionBudget": {
+            "type": "object",
+            "description": "PodDisruptionBudget configuration",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable PodDisruptionBudget"
+                },
+                "minAvailable": {
+                    "description": "Minimum number of pods that must be available (integer or percentage string)"
+                },
+                "maxUnavailable": {
+                    "description": "Maximum number of pods that can be unavailable (integer or percentage string)"
+                }
+            }
         }
     }
 }

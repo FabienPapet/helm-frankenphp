@@ -149,6 +149,11 @@ ingress: {}
 
 monitoring: false
 
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+#  maxUnavailable: 1
+
 #serviceAccount:
 #  create: false
 #  name: ""
