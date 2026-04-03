@@ -79,6 +79,9 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with $context.Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
+      {{- end }}
       {{- if or $context.Values.php.ini $context.Values.volumes }}
       volumes:
         {{- if $context.Values.php.ini }}
