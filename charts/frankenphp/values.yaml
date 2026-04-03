@@ -5,7 +5,14 @@ image:
 #  pullSecrets:
 #     - name: myRegistryKeySecret
 
+# nameOverride and fullnameOverride let you change the chart name used in resource names and labels.
+#nameOverride: ""
+#fullnameOverride: ""
 
+# Annotations to add to all pods (deployment, workers, crons, jobs).
+podAnnotations: {}
+#  prometheus.io/scrape: "true"
+#  custom-annotation: "value"
 
 php:
   ini: ""
@@ -96,6 +103,10 @@ affinity: {}
 nodeSelector: {}
 
 tolerations: []
+
+# terminationGracePeriodSeconds defines how long Kubernetes waits for a pod to shut down gracefully.
+# Increase this for workers that need time to finish processing current messages.
+#terminationGracePeriodSeconds: 30
 
 # Extra volumes to mount into all pods (deployment, workers, crons, jobs).
 # Use this to inject secrets or configmaps as files into your containers.
