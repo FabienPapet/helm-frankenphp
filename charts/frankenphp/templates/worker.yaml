@@ -32,11 +32,19 @@ spec:
       {{- if $.Values.serviceAccount }}
       serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" $ }}
       {{- end }}
+      {{- with $.Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       restartPolicy: Always
       containers:
         - name: {{ $workerName }}
           image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
           imagePullPolicy: {{ $.Values.image.pullPolicy | default "IfNotPresent" }}
+          {{- with $.Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           lifecycle:
             preStop:
               exec:
@@ -45,12 +53,19 @@ spec:
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          command: # todo: find a better way to handle this
-            - "/bin/sh"
-            - "-c"
+          command: ["/bin/sh", "-c"]
+          args:
             - {{ .command | quote }}
           {{- with $.Values.resources }}
           resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.readinessProbe }}
+          readinessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- if or $.Values.php.ini $.Values.volumeMounts }}

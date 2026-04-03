@@ -1,0 +1,90 @@
+suite: Health Probes
+templates:
+  - deployment.yaml
+tests:
+  - it: should not have livenessProbe by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+
+  - it: should not have readinessProbe by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: should set livenessProbe when configured
+    set:
+      livenessProbe:
+        httpGet:
+          path: /
+          port: http
+        initialDelaySeconds: 10
+        periodSeconds: 10
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: http
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.initialDelaySeconds
+          value: 10
+
+  - it: should set readinessProbe when configured
+    set:
+      readinessProbe:
+        httpGet:
+          path: /
+          port: http
+        initialDelaySeconds: 5
+        periodSeconds: 10
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
+          value: 5
+
+  - it: should support exec probe
+    set:
+      livenessProbe:
+        exec:
+          command:
+            - php
+            - -r
+            - "echo 'ok';"
+        periodSeconds: 30
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.exec.command[0]
+          value: php
+---
+suite: Health Probes - Workers
+templates:
+  - worker.yaml
+tests:
+  - it: should not have livenessProbe in workers by default
+    set:
+      consumers:
+        - name: "queue"
+          command: "php bin/console messenger:consume"
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+
+  - it: should set livenessProbe in workers when configured
+    set:
+      consumers:
+        - name: "queue"
+          command: "php bin/console messenger:consume"
+      livenessProbe:
+        httpGet:
+          path: /
+          port: http
+        periodSeconds: 10
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /
