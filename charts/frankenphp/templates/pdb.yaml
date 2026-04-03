@@ -1,0 +1,18 @@
+{{- if (.Values.podDisruptionBudget).enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "helm-frankenphp.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "helm-frankenphp.selectorLabels" . | nindent 6 }}
+  {{- if .Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable | default 1 }}
+  {{- end }}
+{{- end }}
