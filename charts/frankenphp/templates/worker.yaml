@@ -68,6 +68,10 @@ spec:
           readinessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with $.Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- if or $.Values.php.ini $.Values.volumeMounts }}
           volumeMounts:
             {{- if $.Values.php.ini }}

@@ -187,3 +187,18 @@ readinessProbe:
 ```
 
 Probes are applied to both the main deployment and workers. By default, no probes are configured.
+
+### Startup Probe
+
+For slow-starting applications, add a startup probe to delay liveness/readiness checks until boot completes:
+
+```yaml
+startupProbe:
+  httpGet:
+    path: /
+    port: http
+  failureThreshold: 30   # 30 × 10s = 5 minutes max startup time
+  periodSeconds: 10
+```
+
+See `examples/13-startup-probe.yaml` for a full example.

@@ -1,0 +1,41 @@
+# Example: Startup probe for slow-starting applications
+# Use startupProbe when your app has a long boot time (e.g. Symfony warmup, Laravel boot).
+# While the startupProbe is active, liveness and readiness checks are paused,
+# preventing premature restarts during startup.
+image:
+  repository: dunglas/frankenphp
+  tag: latest
+
+deployment:
+  replicas: 2
+
+# Give the app up to 5 minutes to start (30 failures × 10s period)
+startupProbe:
+  httpGet:
+    path: /
+    port: http
+  failureThreshold: 30
+  periodSeconds: 10
+
+# Once started, check health every 10s
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  failureThreshold: 3
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    memory: "256Mi"

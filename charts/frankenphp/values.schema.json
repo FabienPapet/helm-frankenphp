@@ -427,6 +427,10 @@
             "type": "object",
             "description": "Readiness probe configuration for the main deployment and workers"
         },
+        "startupProbe": {
+            "type": "object",
+            "description": "Startup probe configuration for the main deployment and workers. Useful for slow-starting apps."
+        },
         "podDisruptionBudget": {
             "type": "object",
             "description": "PodDisruptionBudget configuration",

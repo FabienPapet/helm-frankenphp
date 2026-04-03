@@ -88,3 +88,57 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.httpGet.path
           value: /
+---
+suite: Startup Probe
+templates:
+  - deployment.yaml
+tests:
+  - it: should not have startupProbe by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+
+  - it: should set startupProbe when configured
+    set:
+      startupProbe:
+        httpGet:
+          path: /
+          port: http
+        failureThreshold: 30
+        periodSeconds: 10
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.failureThreshold
+          value: 30
+---
+suite: Startup Probe - Workers
+templates:
+  - worker.yaml
+tests:
+  - it: should not have startupProbe in workers by default
+    set:
+      consumers:
+        - name: "queue"
+          command: "php bin/console messenger:consume"
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+
+  - it: should set startupProbe in workers when configured
+    set:
+      consumers:
+        - name: "queue"
+          command: "php bin/console messenger:consume"
+      startupProbe:
+        httpGet:
+          path: /
+          port: http
+        failureThreshold: 30
+        periodSeconds: 10
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.failureThreshold
+          value: 30

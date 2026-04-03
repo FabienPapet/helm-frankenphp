@@ -98,6 +98,15 @@ readinessProbe: {}
 #  periodSeconds: 10
 #  failureThreshold: 3
 
+# startupProbe is useful for applications with long startup times (e.g. Symfony, Laravel).
+# It delays liveness/readiness checks until the app has had time to boot.
+startupProbe: {}
+#  httpGet:
+#    path: /
+#    port: http
+#  failureThreshold: 30
+#  periodSeconds: 10
+
 affinity: {}
 
 nodeSelector: {}

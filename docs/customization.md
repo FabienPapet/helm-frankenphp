@@ -98,3 +98,21 @@ readinessProbe:
 ```
 
 You can also use `exec` or `tcpSocket` probe types. Probes are applied to the main deployment and all workers.
+
+## Startup Probe
+
+For applications with long startup times (e.g. Symfony cache warmup, Laravel bootstrap), use a startup
+probe to prevent premature liveness/readiness failures during the boot phase:
+
+```yaml
+# Allow up to 5 minutes for the app to start (30 × 10s)
+startupProbe:
+  httpGet:
+    path: /
+    port: http
+  failureThreshold: 30
+  periodSeconds: 10
+```
+
+While the startup probe is active, liveness and readiness probes are paused. Only after the startup
+probe succeeds do the other probes take over.
