@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "helm-frankenphp.labels" . | nindent 4 }}
 spec:
-  type: "ClusterIP"
+  type: {{ .Values.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: http

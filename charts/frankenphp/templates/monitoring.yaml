@@ -3,7 +3,9 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: {{- $name := printf "%s-%s" .Chart.Name .Release.Name }}
+  name: {{ printf "%s-%s" .Release.Name .Chart.Name }}
+  labels:
+    {{- include "helm-frankenphp.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:

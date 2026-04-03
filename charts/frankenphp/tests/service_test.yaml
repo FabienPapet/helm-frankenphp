@@ -13,6 +13,22 @@ tests:
       - equal:
           path: spec.type
           value: ClusterIP
+  - it: should use configured service type
+    set:
+      service:
+        type: LoadBalancer
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+  - it: should use NodePort when configured
+    set:
+      service:
+        type: NodePort
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
   - it: should use configured port
     set:
       service:

@@ -14,6 +14,19 @@ tests:
           of: PodMonitor
       - isAPIVersion:
           of: monitoring.coreos.com/v1
+  - it: should have a non-empty metadata name
+    set:
+      monitoring: true
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: RELEASE-NAME
+  - it: should have correct labels
+    set:
+      monitoring: true
+    asserts:
+      - exists:
+          path: metadata.labels
   - it: should have correct endpoints
     set:
       monitoring: true
