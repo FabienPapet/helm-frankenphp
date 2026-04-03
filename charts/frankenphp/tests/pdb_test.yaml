@@ -1,0 +1,74 @@
+suite: PodDisruptionBudget
+templates:
+  - pdb.yaml
+tests:
+  - it: should not create PDB when disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create PDB when enabled
+    set:
+      podDisruptionBudget:
+        enabled: true
+        minAvailable: 1
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - isAPIVersion:
+          of: policy/v1
+      - matchRegex:
+          path: metadata.name
+          pattern: RELEASE-NAME$
+
+  - it: should set minAvailable when configured
+    set:
+      podDisruptionBudget:
+        enabled: true
+        minAvailable: 2
+    asserts:
+      - equal:
+          path: spec.minAvailable
+          value: 2
+
+  - it: should default minAvailable to 1
+    set:
+      podDisruptionBudget:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.minAvailable
+          value: 1
+
+  - it: should set maxUnavailable when configured
+    set:
+      podDisruptionBudget:
+        enabled: true
+        maxUnavailable: 1
+    asserts:
+      - equal:
+          path: spec.maxUnavailable
+          value: 1
+      - notExists:
+          path: spec.minAvailable
+
+  - it: should prefer maxUnavailable over minAvailable when both set
+    set:
+      podDisruptionBudget:
+        enabled: true
+        minAvailable: 2
+        maxUnavailable: 1
+    asserts:
+      - equal:
+          path: spec.maxUnavailable
+          value: 1
+      - notExists:
+          path: spec.minAvailable
+
+  - it: should have correct selector labels
+    set:
+      podDisruptionBudget:
+        enabled: true
+    asserts:
+      - exists:
+          path: spec.selector.matchLabels
