@@ -108,3 +108,21 @@ tests:
       - equal:
           path: spec.template.spec.serviceAccountName
           value: my-sa
+
+  - it: should not have pod annotations by default
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations
+
+  - it: should set pod annotations when configured
+    set:
+      podAnnotations:
+        custom-annotation: "my-value"
+        prometheus.io/scrape: "true"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["custom-annotation"]
+          value: "my-value"
+      - equal:
+          path: spec.template.metadata.annotations["prometheus.io/scrape"]
+          value: "true"
