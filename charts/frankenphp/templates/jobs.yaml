@@ -36,6 +36,10 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with $context.Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       restartPolicy: {{ $job.restartPolicy | default "OnFailure" }}
       containers:
         - name: {{ $job.name | replace "_" "-" }}
@@ -78,6 +82,16 @@ spec:
       {{- with $context.Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $context.Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $context.Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with $context.Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
       {{- end }}
       {{- if or $context.Values.php.ini $context.Values.volumes }}
       volumes:

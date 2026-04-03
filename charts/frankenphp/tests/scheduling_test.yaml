@@ -157,3 +157,241 @@ tests:
       - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
           value: 120
+
+  - it: should set terminationGracePeriodSeconds in CronJob
+    template: crons.yaml
+    set:
+      crons:
+        - name: test-cron
+          schedule: "* * * * *"
+          command: "ls"
+      terminationGracePeriodSeconds: 60
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.terminationGracePeriodSeconds
+          value: 60
+
+  - it: should not set terminationGracePeriodSeconds in CronJob by default
+    template: crons.yaml
+    set:
+      crons:
+        - name: test-cron
+          schedule: "* * * * *"
+          command: "ls"
+    asserts:
+      - notExists:
+          path: spec.jobTemplate.spec.template.spec.terminationGracePeriodSeconds
+
+  - it: should set terminationGracePeriodSeconds in Job
+    template: jobs.yaml
+    set:
+      jobs:
+        - name: test-job
+          command: "ls"
+      terminationGracePeriodSeconds: 60
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 60
+
+  - it: should not set terminationGracePeriodSeconds in Job by default
+    template: jobs.yaml
+    set:
+      jobs:
+        - name: test-job
+          command: "ls"
+    asserts:
+      - notExists:
+          path: spec.template.spec.terminationGracePeriodSeconds
+
+  - it: should set topologySpreadConstraints in Deployment
+    template: deployment.yaml
+    set:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: frankenphp
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: kubernetes.io/hostname
+
+  - it: should not set topologySpreadConstraints by default
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.topologySpreadConstraints
+
+  - it: should set priorityClassName in Deployment
+    template: deployment.yaml
+    set:
+      priorityClassName: high-priority
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: high-priority
+
+  - it: should not set priorityClassName by default
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.priorityClassName
+
+  - it: should set initContainers in Deployment
+    template: deployment.yaml
+    set:
+      initContainers:
+        - name: wait-for-db
+          image: busybox
+          command: ['sh', '-c', 'until nc -z db 5432; do sleep 2; done']
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-db
+
+  - it: should not set initContainers by default
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.initContainers
+
+  - it: should set topologySpreadConstraints in Worker
+    template: worker.yaml
+    set:
+      consumers:
+        - name: test-worker
+          command: "ls"
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: test
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: topology.kubernetes.io/zone
+
+  - it: should set priorityClassName in Worker
+    template: worker.yaml
+    set:
+      consumers:
+        - name: test-worker
+          command: "ls"
+      priorityClassName: low-priority
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: low-priority
+
+  - it: should set initContainers in Worker
+    template: worker.yaml
+    set:
+      consumers:
+        - name: test-worker
+          command: "ls"
+      initContainers:
+        - name: init-setup
+          image: busybox
+          command: ['sh', '-c', 'echo init']
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init-setup
+
+  - it: should set topologySpreadConstraints in CronJob
+    template: crons.yaml
+    set:
+      crons:
+        - name: test-cron
+          schedule: "* * * * *"
+          command: "ls"
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: test
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: kubernetes.io/hostname
+
+  - it: should set priorityClassName in CronJob
+    template: crons.yaml
+    set:
+      crons:
+        - name: test-cron
+          schedule: "* * * * *"
+          command: "ls"
+      priorityClassName: high-priority
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.priorityClassName
+          value: high-priority
+
+  - it: should set initContainers in CronJob
+    template: crons.yaml
+    set:
+      crons:
+        - name: test-cron
+          schedule: "* * * * *"
+          command: "ls"
+      initContainers:
+        - name: init-cron
+          image: busybox
+          command: ['sh', '-c', 'echo init']
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.initContainers[0].name
+          value: init-cron
+
+  - it: should set topologySpreadConstraints in Job
+    template: jobs.yaml
+    set:
+      jobs:
+        - name: test-job
+          command: "ls"
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: test
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: kubernetes.io/hostname
+
+  - it: should set priorityClassName in Job
+    template: jobs.yaml
+    set:
+      jobs:
+        - name: test-job
+          command: "ls"
+      priorityClassName: batch-priority
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: batch-priority
+
+  - it: should set initContainers in Job
+    template: jobs.yaml
+    set:
+      jobs:
+        - name: test-job
+          command: "ls"
+      initContainers:
+        - name: init-job
+          image: busybox
+          command: ['sh', '-c', 'echo init']
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init-job

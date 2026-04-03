@@ -101,12 +101,17 @@
             "description": "Environment variables",
             "items": {
                 "type": "object",
+                "required": ["name"],
                 "properties": {
                     "name": {
                         "type": "string"
                     },
                     "value": {
                         "type": "string"
+                    },
+                    "valueFrom": {
+                        "type": "object",
+                        "description": "Source for the environment variable's value (secretKeyRef, configMapKeyRef, fieldRef, resourceFieldRef)"
                     }
                 }
             }
@@ -310,6 +315,26 @@
                             "Replace"
                         ],
                         "description": "Concurrency policy"
+                    },
+                    "restartPolicy": {
+                        "type": "string",
+                        "enum": ["Never", "OnFailure"],
+                        "description": "Pod restart policy for cron job pods"
+                    },
+                    "successfulJobsHistoryLimit": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Number of successful finished jobs to retain"
+                    },
+                    "failedJobsHistoryLimit": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Number of failed finished jobs to retain"
+                    },
+                    "backoffLimit": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Number of retries before marking the job as failed"
                     }
                 }
             }
@@ -346,6 +371,31 @@
                             "Never"
                         ],
                         "description": "Restart policy"
+                    },
+                    "ttlSecondsAfterFinished": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Seconds after which a finished job is automatically deleted"
+                    },
+                    "resources": {
+                        "type": "object",
+                        "description": "Per-job resource overrides (takes precedence over global resources)",
+                        "properties": {
+                            "requests": {
+                                "type": "object",
+                                "properties": {
+                                    "cpu": {"type": "string"},
+                                    "memory": {"type": "string"}
+                                }
+                            },
+                            "limits": {
+                                "type": "object",
+                                "properties": {
+                                    "cpu": {"type": "string"},
+                                    "memory": {"type": "string"}
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -466,6 +516,24 @@
             "type": "integer",
             "minimum": 0,
             "description": "Override the default termination grace period for all pods"
+        },
+        "topologySpreadConstraints": {
+            "type": "array",
+            "description": "Topology spread constraints to control how pods are spread across failure domains",
+            "items": {
+                "type": "object"
+            }
+        },
+        "priorityClassName": {
+            "type": "string",
+            "description": "PriorityClass name to assign to all pods for scheduling priority"
+        },
+        "initContainers": {
+            "type": "array",
+            "description": "Init containers to run before the main app container starts",
+            "items": {
+                "type": "object"
+            }
         }
     }
 }

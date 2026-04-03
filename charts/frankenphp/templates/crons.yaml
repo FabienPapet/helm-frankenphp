@@ -30,6 +30,10 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with $.Values.initContainers }}
+          initContainers:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           restartPolicy: {{ (default .restartPolicy "Never") }}
           containers:
             - name: {{ $cronName | lower }}
@@ -73,6 +77,16 @@ spec:
           {{- with $.Values.tolerations }}
           tolerations:
             {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.topologySpreadConstraints }}
+          topologySpreadConstraints:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.priorityClassName }}
+          priorityClassName: {{ . }}
+          {{- end }}
+          {{- with $.Values.terminationGracePeriodSeconds }}
+          terminationGracePeriodSeconds: {{ . }}
           {{- end }}
           {{- if or $.Values.php.ini $.Values.volumes }}
           volumes:

@@ -113,6 +113,26 @@ nodeSelector: {}
 
 tolerations: []
 
+# topologySpreadConstraints controls how pods are spread across failure domains (nodes, zones).
+# Useful for ensuring high availability across availability zones.
+topologySpreadConstraints: []
+#  - maxSkew: 1
+#    topologyKey: kubernetes.io/hostname
+#    whenUnsatisfiable: DoNotSchedule
+#    labelSelector:
+#      matchLabels:
+#        app.kubernetes.io/name: frankenphp
+
+# priorityClassName assigns a PriorityClass to all pods, affecting scheduling order under resource pressure.
+#priorityClassName: ""
+
+# initContainers defines a list of init containers to run before the main app container starts.
+# Useful for database migration checks, config rendering, or dependency readiness gates.
+initContainers: []
+#  - name: wait-for-db
+#    image: busybox
+#    command: ['sh', '-c', 'until nc -z db 5432; do sleep 2; done']
+
 # terminationGracePeriodSeconds defines how long Kubernetes waits for a pod to shut down gracefully.
 # Increase this for workers that need time to finish processing current messages.
 #terminationGracePeriodSeconds: 30

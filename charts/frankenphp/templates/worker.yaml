@@ -36,6 +36,10 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with $.Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       restartPolicy: Always
       containers:
         - name: {{ $workerName }}
@@ -94,6 +98,13 @@ spec:
       {{- with $.Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.priorityClassName }}
+      priorityClassName: {{ . }}
       {{- end }}
       {{- with $.Values.terminationGracePeriodSeconds }}
       terminationGracePeriodSeconds: {{ . }}
