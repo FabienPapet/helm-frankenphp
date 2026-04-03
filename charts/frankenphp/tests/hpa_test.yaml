@@ -1,0 +1,98 @@
+suite: HPA - Main Deployment
+templates:
+  - hpa.yaml
+tests:
+  - it: should not create HPA when autoscaling is disabled
+    set:
+      deployment:
+        replicas: 3
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create HPA when autoscaling is enabled
+    set:
+      deployment:
+        replicas: 3
+      autoscaling:
+        enabled: true
+        minReplicas: 2
+        maxReplicas: 8
+        targetCPUUtilizationPercentage: 75
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - isAPIVersion:
+          of: autoscaling/v2
+      - equal:
+          path: spec.minReplicas
+          value: 2
+      - equal:
+          path: spec.maxReplicas
+          value: 8
+      - equal:
+          path: spec.scaleTargetRef.kind
+          value: Deployment
+      - matchRegex:
+          path: spec.scaleTargetRef.name
+          pattern: RELEASE-NAME$
+
+  - it: should set CPU metric when targetCPUUtilizationPercentage is set
+    set:
+      deployment:
+        replicas: 3
+      autoscaling:
+        enabled: true
+        targetCPUUtilizationPercentage: 80
+    asserts:
+      - equal:
+          path: spec.metrics[0].type
+          value: Resource
+      - equal:
+          path: spec.metrics[0].resource.name
+          value: cpu
+      - equal:
+          path: spec.metrics[0].resource.target.averageUtilization
+          value: 80
+
+  - it: should set memory metric when targetMemoryUtilizationPercentage is set
+    set:
+      deployment:
+        replicas: 3
+      autoscaling:
+        enabled: true
+        targetCPUUtilizationPercentage: 80
+        targetMemoryUtilizationPercentage: 70
+    asserts:
+      - equal:
+          path: spec.metrics[1].type
+          value: Resource
+      - equal:
+          path: spec.metrics[1].resource.name
+          value: memory
+      - equal:
+          path: spec.metrics[1].resource.target.averageUtilization
+          value: 70
+---
+suite: HPA - Deployment replicas
+templates:
+  - deployment.yaml
+tests:
+  - it: should include replicas when autoscaling is disabled
+    set:
+      deployment:
+        replicas: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  - it: should omit replicas when autoscaling is enabled
+    set:
+      deployment:
+        replicas: 3
+      autoscaling:
+        enabled: true
+    asserts:
+      - notExists:
+          path: spec.replicas

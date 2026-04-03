@@ -1,0 +1,69 @@
+suite: HPA - Workers
+templates:
+  - worker-hpa.yaml
+tests:
+  - it: should not create HPA for workers without autoscale flag
+    set:
+      consumers:
+        - name: "queue"
+          command: "php bin/console messenger:consume"
+          replicas: 2
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create HPA when worker has autoscale enabled
+    set:
+      consumers:
+        - name: "queue"
+          command: "php bin/console messenger:consume"
+          autoscale: true
+          minReplicas: 1
+          maxReplicas: 5
+          targetCPUUtilizationPercentage: 80
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - isAPIVersion:
+          of: autoscaling/v2
+      - matchRegex:
+          path: metadata.name
+          pattern: -worker-queue$
+      - equal:
+          path: spec.minReplicas
+          value: 1
+      - equal:
+          path: spec.maxReplicas
+          value: 5
+
+  - it: should set CPU metric for worker HPA
+    set:
+      consumers:
+        - name: "queue"
+          command: "php bin/console messenger:consume"
+          autoscale: true
+          targetCPUUtilizationPercentage: 75
+    asserts:
+      - equal:
+          path: spec.metrics[0].resource.name
+          value: cpu
+      - equal:
+          path: spec.metrics[0].resource.target.averageUtilization
+          value: 75
+
+  - it: should create HPA only for workers with autoscale flag when mixed
+    set:
+      consumers:
+        - name: "queue"
+          command: "cmd"
+          autoscale: true
+          maxReplicas: 5
+        - name: "emails"
+          command: "cmd"
+          replicas: 2
+    asserts:
+      - hasDocuments:
+          count: 1
+      - matchRegex:
+          path: metadata.name
+          pattern: -worker-queue$

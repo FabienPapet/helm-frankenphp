@@ -249,6 +249,32 @@
                         "type": "integer",
                         "minimum": 0,
                         "description": "Number of replicas"
+                    },
+                    "autoscale": {
+                        "type": "boolean",
+                        "description": "Enable HPA for this worker (omits replicas from Deployment)"
+                    },
+                    "minReplicas": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "HPA minimum replicas for this worker"
+                    },
+                    "maxReplicas": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "HPA maximum replicas for this worker"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "description": "HPA target CPU utilization percentage for this worker"
+                    },
+                    "targetMemoryUtilizationPercentage": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "description": "HPA target memory utilization percentage for this worker"
                     }
                 }
             }
@@ -351,6 +377,38 @@
             "description": "Extra volume mounts to add to all containers",
             "items": {
                 "type": "object"
+            }
+        },
+        "autoscaling": {
+            "type": "object",
+            "description": "HorizontalPodAutoscaler configuration for the main deployment",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable HPA for the main deployment"
+                },
+                "minReplicas": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Minimum number of replicas"
+                },
+                "maxReplicas": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Maximum number of replicas"
+                },
+                "targetCPUUtilizationPercentage": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Target CPU utilization percentage"
+                },
+                "targetMemoryUtilizationPercentage": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Target memory utilization percentage"
+                }
             }
         },
         "podSecurityContext": {

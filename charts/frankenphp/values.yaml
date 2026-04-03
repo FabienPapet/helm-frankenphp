@@ -31,6 +31,13 @@ caddyfile: ""
 deployment:
   replicas: 3
 
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+#  targetMemoryUtilizationPercentage: 80
+
 crons: []
 #  - name: "my-super-cron"
 #    command: "php public/command.php"
