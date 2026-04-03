@@ -1,0 +1,48 @@
+# Example: Security-hardened deployment
+# Demonstrates podSecurityContext, containerSecurityContext, and health probes.
+# Note: FrankenPHP/Caddy may write to /tmp and /var — avoid readOnlyRootFilesystem: true
+# unless your image is specifically built to handle it.
+image:
+  repository: dunglas/frankenphp
+  tag: latest
+
+deployment:
+  replicas: 2
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  failureThreshold: 3
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    memory: "256Mi"

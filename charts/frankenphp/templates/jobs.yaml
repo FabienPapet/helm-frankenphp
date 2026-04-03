@@ -32,11 +32,19 @@ spec:
       {{- if $context.Values.serviceAccount }}
       serviceAccountName: {{ include "helm-frankenphp.serviceAccountName" $context }}
       {{- end }}
+      {{- with $context.Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       restartPolicy: {{ $job.restartPolicy | default "OnFailure" }}
       containers:
         - name: {{ $job.name | replace "_" "-" }}
           image: "{{ $context.Values.image.repository }}:{{ $context.Values.image.tag | default $context.Chart.AppVersion }}"
           imagePullPolicy: {{ $context.Values.image.pullPolicy | default "IfNotPresent" }}
+          {{- with $context.Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           command: ["/bin/sh", "-c"]
           args:
             - {{ $job.command }}

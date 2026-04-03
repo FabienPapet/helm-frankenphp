@@ -352,6 +352,22 @@
             "items": {
                 "type": "object"
             }
+        },
+        "podSecurityContext": {
+            "type": "object",
+            "description": "Pod-level security context applied to all workloads"
+        },
+        "containerSecurityContext": {
+            "type": "object",
+            "description": "Container-level security context applied to all containers"
+        },
+        "livenessProbe": {
+            "type": "object",
+            "description": "Liveness probe configuration for the main deployment and workers"
+        },
+        "readinessProbe": {
+            "type": "object",
+            "description": "Readiness probe configuration for the main deployment and workers"
         }
     }
 }

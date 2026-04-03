@@ -50,6 +50,40 @@ consumers: []
 #    command: "php bin/console messenger:consume"
 #    replicas: 1
 
+podSecurityContext: {}
+#  runAsNonRoot: true
+#  runAsUser: 1000
+#  fsGroup: 1000
+#  seccompProfile:
+#    type: RuntimeDefault
+
+containerSecurityContext: {}
+#  allowPrivilegeEscalation: false
+#  readOnlyRootFilesystem: false
+#  runAsNonRoot: true
+#  runAsUser: 1000
+#  capabilities:
+#    drop:
+#      - ALL
+#  seccompProfile:
+#    type: RuntimeDefault
+
+livenessProbe: {}
+#  httpGet:
+#    path: /
+#    port: http
+#  initialDelaySeconds: 10
+#  periodSeconds: 10
+#  failureThreshold: 3
+
+readinessProbe: {}
+#  httpGet:
+#    path: /
+#    port: http
+#  initialDelaySeconds: 5
+#  periodSeconds: 10
+#  failureThreshold: 3
+
 affinity: {}
 
 nodeSelector: {}

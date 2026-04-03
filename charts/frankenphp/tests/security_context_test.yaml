@@ -1,0 +1,87 @@
+suite: Security Context
+templates:
+  - deployment.yaml
+tests:
+  - it: should not have podSecurityContext by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext
+
+  - it: should set podSecurityContext when configured
+    set:
+      podSecurityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1000
+
+  - it: should not have containerSecurityContext by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].securityContext
+
+  - it: should set containerSecurityContext when configured
+    set:
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+
+  - it: should support capabilities drop in containerSecurityContext
+    set:
+      containerSecurityContext:
+        capabilities:
+          drop:
+            - ALL
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop[0]
+          value: ALL
+---
+suite: Security Context - Workers
+templates:
+  - worker.yaml
+tests:
+  - it: should not have podSecurityContext in workers by default
+    set:
+      consumers:
+        - name: "queue"
+          command: "php bin/console messenger:consume"
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext
+
+  - it: should set podSecurityContext in workers when configured
+    set:
+      consumers:
+        - name: "queue"
+          command: "php bin/console messenger:consume"
+      podSecurityContext:
+        runAsNonRoot: true
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+
+  - it: should set containerSecurityContext in workers when configured
+    set:
+      consumers:
+        - name: "queue"
+          command: "php bin/console messenger:consume"
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
