@@ -24,3 +24,8 @@ affinity:
                   - frankenphp
           topologyKey: kubernetes.io/hostname
 
+# Keep at least 2 pods available during voluntary disruptions (node drains, upgrades)
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+

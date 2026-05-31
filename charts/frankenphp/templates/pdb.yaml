@@ -3,7 +3,7 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ include "helm-frankenphp.fullname" . }}
   labels:
     {{- include "helm-frankenphp.labels" . | nindent 4 }}
 spec:
