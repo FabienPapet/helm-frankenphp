@@ -19,7 +19,7 @@ tests:
           of: policy/v1
       - matchRegex:
           path: metadata.name
-          pattern: RELEASE-NAME$
+          pattern: ^RELEASE-NAME-frankenphp$
 
   - it: should set minAvailable when configured
     set:
