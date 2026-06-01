@@ -10,7 +10,7 @@ crons:
     schedule: "0 0 * * *"
     successfulJobsHistoryLimit: 3
     failedJobsHistoryLimit: 1
-  
+
   - name: "report-daily"
     command: "php bin/console app:report:daily"
     schedule: "0 8 * * *"

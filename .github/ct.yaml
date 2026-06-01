@@ -1,0 +1,9 @@
+# chart-testing (ct) configuration. Docs: https://github.com/helm/chart-testing
+target-branch: main
+chart-dirs:
+  - charts
+helm-extra-args: --timeout 3m
+check-version-increment: true
+validate-maintainers: false
+validate-chart-schema: true
+validate-yaml: true

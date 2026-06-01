@@ -1,10 +1,17 @@
-.PHONY: unit-test lint validate install-kubeconform
+.PHONY: unit-test lint yamllint validate helm-test install-kubeconform
+
+# Kubernetes API version kubeconform validates examples against. Override on the CLI:
+#   make validate KUBE_VERSION=1.31.0
+KUBE_VERSION ?= 1.29.0
 
 unit-test:
 	cd charts/frankenphp; helm unittest .
 
 lint:
 	helm lint charts/frankenphp
+
+yamllint:
+	yamllint examples/ docs/ -c .yamllint
 
 install-kubeconform:
 	@VERSION=v0.6.4; \
@@ -21,5 +28,12 @@ install-kubeconform:
 validate:
 	@for file in examples/*.yaml; do \
 		echo "Validating $$file with kubeconform..."; \
-		helm template frankenphp ./charts/frankenphp -f $$file | kubeconform -summary -strict -ignore-missing-schemas -kubernetes-version 1.29.0 || exit 1; \
+		helm template frankenphp ./charts/frankenphp -f $$file | kubeconform -summary -strict -ignore-missing-schemas -kubernetes-version $(KUBE_VERSION) || exit 1; \
 	done
+
+# Install the chart with the CI smoke values and run `helm test` against a running cluster.
+helm-test:
+	helm install smoke ./charts/frankenphp -f charts/frankenphp/ci/smoke-values.yaml \
+		--create-namespace --namespace smoke --wait --timeout 3m
+	helm test smoke --namespace smoke --logs
+	helm uninstall smoke --namespace smoke

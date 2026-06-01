@@ -19,7 +19,7 @@ env:
 # Ingress
 ingress:
   className: "nginx"
-  
+
   enabled: true
   hosts:
     - host: app.example.com

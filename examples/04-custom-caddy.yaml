@@ -10,11 +10,11 @@ caddyfile: |-
     order php_server before file_server
     admin off
   }
-  
+
   :80 {
     root * /app/public
     encode zstd br gzip
-    
+
     # Custom log format
     log {
       output stdout

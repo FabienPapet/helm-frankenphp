@@ -1,0 +1,26 @@
+# CI smoke values: minimal runnable config used by the `smoke` job and chart-testing.
+# Uses the upstream FrankenPHP base image so `helm test` can prove the app serves.
+image:
+  repository: dunglas/frankenphp
+  tag: "1-php8.3"
+  pullPolicy: IfNotPresent
+
+deployment:
+  replicas: 1
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    memory: "256Mi"
+
+readinessProbe:
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 6
+
+tests:
+  enabled: true

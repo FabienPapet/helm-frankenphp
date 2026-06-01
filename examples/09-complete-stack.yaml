@@ -5,7 +5,6 @@ image:
   repository: fabienpapet/symfony-demo-frankenphp
   tag: "latest"
 
-
 deployment:
   replicas: 3
 

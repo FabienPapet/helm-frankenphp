@@ -404,6 +404,16 @@
             "type": "integer",
             "minimum": 0,
             "description": "Override the default termination grace period for all pods"
+        },
+        "tests": {
+            "type": "object",
+            "description": "Test hooks configuration",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Render the helm test connection Pod"
+                }
+            }
         }
     }
 }
