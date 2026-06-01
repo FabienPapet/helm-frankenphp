@@ -49,17 +49,13 @@ php:
 jobs:
   # Run as post-install/upgrade hooks: the php-ini ConfigMap mounted by jobs is
   # created during the main release phase, so it is not present during pre-install.
-  - name: "db-install"
-    command: "php bin/console doctrine:database:create --if-not-exists"
-    annotations:
-      "helm.sh/hook": post-install,post-upgrade
-      "helm.sh/hook-weight": "1"
-      "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  # The SQLite database file is created by the migrations themselves, so there is
+  # no separate database:create step (doctrine:database:create is unsupported on SQLite).
   - name: "db-migrations"
     command: "php bin/console doctrine:migrations:migrate --no-interaction"
     annotations:
       "helm.sh/hook": post-install,post-upgrade
-      "helm.sh/hook-weight": "2"
+      "helm.sh/hook-weight": "1"
       "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 
 consumers:
