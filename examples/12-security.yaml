@@ -4,10 +4,20 @@
 # unless your image is specifically built to handle it.
 image:
   repository: dunglas/frankenphp
-  tag: latest
+  tag: "1-php8.3"
 
 deployment:
   replicas: 2
+
+# FrankenPHP binds :80 and Caddy persists data under $XDG_DATA_HOME; running as a
+# non-root user requires the NET_BIND_SERVICE capability and a writable data dir.
+env:
+  - name: SERVER_NAME
+    value: ":80"
+  - name: XDG_DATA_HOME
+    value: /tmp
+  - name: XDG_CONFIG_HOME
+    value: /tmp
 
 podSecurityContext:
   runAsNonRoot: true
@@ -23,6 +33,8 @@ containerSecurityContext:
   capabilities:
     drop:
       - ALL
+    add:
+      - NET_BIND_SERVICE
 
 livenessProbe:
   httpGet:

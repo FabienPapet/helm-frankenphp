@@ -129,8 +129,17 @@ jobs:
           NS="$RELEASE_NAME-ns"
           echo "Installing $file as $RELEASE_NAME in $NS"
 
+          kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+
+          # Apply any CI prerequisites (e.g. secrets) this example needs.
+          setup="examples/setup/${{ matrix.example }}"
+          if [ -f "$setup" ]; then
+            echo "Applying CI prerequisites from $setup"
+            kubectl apply -n "$NS" -f "$setup"
+          fi
+
           if ! helm install "$RELEASE_NAME" ./charts/frankenphp -f "$file" \
-                --create-namespace --namespace "$NS" --wait --timeout 3m; then
+                --namespace "$NS" --wait --timeout 3m; then
             echo "::error::helm install failed for $file"
             kubectl describe pods -n "$NS" || true
             kubectl logs -l app.kubernetes.io/instance="$RELEASE_NAME" -n "$NS" --all-containers --tail=50 || true
