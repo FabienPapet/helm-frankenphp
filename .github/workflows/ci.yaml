@@ -6,17 +6,21 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  HELM_VERSION: v3.16.3
+  KUBECONFORM_VERSION: v0.6.4
+
 jobs:
-  # STAGE 1: Unit Tests & Validation
-  unit-tests:
+  # STAGE 1a: Lint + unit tests + yamllint (template-level, no cluster)
+  lint-unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: azure/setup-helm@v4
         with:
-          version: v3.16.3
-      
+          version: ${{ env.HELM_VERSION }}
+
       - name: Lint
         run: make lint
 
@@ -26,18 +30,67 @@ jobs:
       - name: Unit Tests
         run: make unit-test
 
+      - name: Install yamllint
+        run: pipx install yamllint
+
+      - name: Yamllint
+        run: make yamllint
+
+  # STAGE 1b: kubeconform validation across multiple Kubernetes API versions
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        kube_version: [ "1.27.0", "1.29.0", "1.31.0" ]
+    name: Validate (k8s ${{ matrix.kube_version }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
       - name: Install Kubeconform
         run: |
-          VERSION=v0.6.4
-          curl -L https://github.com/yannh/kubeconform/releases/download/$VERSION/kubeconform-linux-amd64.tar.gz | tar xz
+          curl -L https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz | tar xz
           sudo mv kubeconform /usr/local/bin/
 
       - name: Kubeconform Validation
-        run: make validate
+        run: make validate KUBE_VERSION=${{ matrix.kube_version }}
 
-  # STAGE 2: Examples (Pre-requisite: Unit Tests MUST pass)
+  # STAGE 2: chart-testing — enforces Chart.yaml version bump + installs ci values
+  chart-testing:
+    needs: [ lint-unit, validate ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: Run chart-testing (lint)
+        run: ct lint --config .github/ct.yaml
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.10.0
+
+      - name: Run chart-testing (install)
+        run: ct install --config .github/ct.yaml
+
+  # STAGE 3: Build the matrix of example values files
   list-examples:
-    needs: unit-tests
+    needs: [ lint-unit, validate ]
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -45,42 +98,135 @@ jobs:
       - uses: actions/checkout@v4
       - id: set-matrix
         run: |
-          # List all yaml files in examples, get basename, and format as JSON array
           EXAMPLES=$(ls examples/*.yaml | xargs -n 1 basename | jq -R -s -c 'split("\n")[:-1]')
           echo "matrix=$EXAMPLES" >> $GITHUB_OUTPUT
 
+  # STAGE 3 (cont.): install every example on kind and assert it becomes ready.
+  # NOTE: gating is now real — a failed install or unready workload fails the job.
   install-examples:
-    needs: list-examples
+    needs: [ list-examples ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         example: ${{ fromJson(needs.list-examples.outputs.matrix) }}
-    name: Test ${{ matrix.example }}
+    name: Install ${{ matrix.example }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: azure/setup-helm@v4
         with:
-          version: v3.16.3
-      
+          version: ${{ env.HELM_VERSION }}
+
       - name: Create kind cluster
-        uses: helm/kind-action@v1.9.0
-      
-      - name: Test Example
-        continue-on-error: true
+        uses: helm/kind-action@v1.10.0
+
+      - name: Install and verify example
         run: |
+          set -euo pipefail
           file="examples/${{ matrix.example }}"
-          echo "Testing installation with $file..."
-          
           RELEASE_NAME="test-$(echo ${{ matrix.example }} | sed 's/\.yaml//' | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]-')"
           NS="$RELEASE_NAME-ns"
-          
-          if helm install "$RELEASE_NAME" ./charts/frankenphp -f "$file" --create-namespace --namespace "$NS" --wait --timeout 3m; then
-             echo "✅ Installation successful for $file"
-          else
-             echo "❌ Installation failed for $file"
-             kubectl describe pods -n "$NS"
-             kubectl logs -l app.kubernetes.io/name=frankenphp -n "$NS" --all-containers --tail=20
-             exit 1
+          echo "Installing $file as $RELEASE_NAME in $NS"
+
+          kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+
+          # Apply any CI prerequisites (e.g. secrets) this example needs.
+          setup="examples/setup/${{ matrix.example }}"
+          if [ -f "$setup" ]; then
+            echo "Applying CI prerequisites from $setup"
+            kubectl apply -n "$NS" -f "$setup"
           fi
+
+          if ! helm install "$RELEASE_NAME" ./charts/frankenphp -f "$file" \
+                --namespace "$NS" --wait --timeout 3m; then
+            echo "::error::helm install failed for $file"
+            kubectl describe pods -n "$NS" || true
+            kubectl logs -l app.kubernetes.io/instance="$RELEASE_NAME" -n "$NS" --all-containers --tail=50 || true
+            exit 1
+          fi
+
+          echo "Asserting main Deployment is Available"
+          if ! kubectl wait --for=condition=Available deployment \
+                -l app.kubernetes.io/instance="$RELEASE_NAME" -n "$NS" --timeout=120s; then
+            echo "::error::deployment not Available for $file"
+            kubectl describe pods -n "$NS" || true
+            kubectl logs -l app.kubernetes.io/instance="$RELEASE_NAME" -n "$NS" --all-containers --tail=50 || true
+            exit 1
+          fi
+          echo "✅ $file installed and ready"
+
+  # STAGE 4: live HTTP smoke via `helm test`, across multiple Kubernetes versions
+  smoke:
+    needs: [ lint-unit, validate ]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node_image:
+          - kindest/node:v1.27.13
+          - kindest/node:v1.29.8
+          - kindest/node:v1.31.0
+    name: Smoke (${{ matrix.node_image }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.10.0
+        with:
+          node_image: ${{ matrix.node_image }}
+
+      - name: Install smoke release
+        run: |
+          helm install smoke ./charts/frankenphp -f charts/frankenphp/ci/smoke-values.yaml \
+            --create-namespace --namespace smoke --wait --timeout 3m
+
+      - name: helm test (HTTP smoke)
+        run: helm test smoke --namespace smoke --logs
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          kubectl describe pods -n smoke || true
+          kubectl logs -l app.kubernetes.io/instance=smoke -n smoke --all-containers --tail=50 || true
+
+  # STAGE 5: upgrade regression — install the latest released chart, then upgrade to this PR
+  upgrade:
+    needs: [ lint-unit, validate ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.10.0
+
+      - name: Install latest released chart
+        id: install-old
+        continue-on-error: true
+        run: |
+          helm repo add frankenphp https://fabienpapet.github.io/helm-frankenphp/
+          helm repo update
+          helm install upg frankenphp/frankenphp \
+            --set image.repository=dunglas/frankenphp --set image.tag=1-php8.3 \
+            --create-namespace --namespace upg --wait --timeout 3m
+
+      - name: Upgrade to PR chart
+        if: steps.install-old.outcome == 'success'
+        run: |
+          helm upgrade upg ./charts/frankenphp \
+            --set image.repository=dunglas/frankenphp --set image.tag=1-php8.3 \
+            --namespace upg --wait --timeout 3m
+          kubectl wait --for=condition=Available deployment \
+            -l app.kubernetes.io/instance=upg -n upg --timeout=120s
+
+      - name: Skip note
+        if: steps.install-old.outcome != 'success'
+        run: echo "No released chart available yet — skipping upgrade regression."

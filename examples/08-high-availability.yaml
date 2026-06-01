@@ -28,4 +28,3 @@ affinity:
 podDisruptionBudget:
   enabled: true
   minAvailable: 2
-

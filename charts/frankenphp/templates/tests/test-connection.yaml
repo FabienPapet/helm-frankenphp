@@ -1,0 +1,30 @@
+{{- if (.Values.tests).enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "helm-frankenphp.fullname" . }}-test-connection"
+  labels:
+    {{- include "helm-frankenphp.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    # Keep the Pod after success so `helm test --logs` can read its output;
+    # it is replaced on the next test run.
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  restartPolicy: Never
+  containers:
+    - name: test-connection
+      image: curlimages/curl:8.11.0
+      command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          # A connection refusal/timeout fails the test. Any HTTP response
+          # (including 404) means FrankenPHP/Caddy is serving, which is success.
+          curl -sf -o /dev/null --retry 10 --retry-all-errors --retry-delay 3 \
+            "http://{{ include "helm-frankenphp.fullname" . }}:{{ .Values.service.port }}/" \
+            || curl -s -o /dev/null --retry 10 --retry-all-errors --retry-delay 3 \
+              "http://{{ include "helm-frankenphp.fullname" . }}:{{ .Values.service.port }}/"
+          echo "OK: {{ include "helm-frankenphp.fullname" . }} is serving on port {{ .Values.service.port }}"
+{{- end }}

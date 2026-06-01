@@ -153,6 +153,10 @@ ingress: {}
 
 monitoring: false
 
+# Controls the `helm test` connection Pod (templates/tests/test-connection.yaml).
+tests:
+  enabled: true
+
 podDisruptionBudget:
   enabled: false
   minAvailable: 1

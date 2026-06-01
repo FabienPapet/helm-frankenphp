@@ -1,0 +1,36 @@
+suite: Test Connection
+templates:
+  - tests/test-connection.yaml
+tests:
+  - it: should render the test Pod by default
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Pod
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: test
+
+  - it: should set hook-delete-policy
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/hook-delete-policy"]
+          value: before-hook-creation
+
+  - it: should target the service port
+    set:
+      service:
+        port: 8080
+    asserts:
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: ":8080/"
+
+  - it: should not render when tests disabled
+    set:
+      tests:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
